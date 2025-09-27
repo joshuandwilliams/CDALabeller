@@ -1,0 +1,14 @@
+Package: CDALabeller
+Title: CDALabeller
+Version: 0.0.0.9000
+Authors@R: 
+    person("Josh", "Williams", , "jowillia@nbi.ac.uk", role = c("aut", "cre"))
+Description: An R Shiny app for labelling cell death areas.
+License: What license is it under?
+Imports: 
+    config,
+    golem,
+    shiny
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
