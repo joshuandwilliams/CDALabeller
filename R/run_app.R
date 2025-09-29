@@ -8,11 +8,12 @@
 #' @importFrom shiny shinyApp
 #' @importFrom golem with_golem_options
 run_app <- function(
-  onStart = NULL,
-  options = list(),
-  enableBookmarking = NULL,
-  uiPattern = "/",
-  ...
+    onStart = NULL,
+    options = list(),
+    enableBookmarking = NULL,
+    uiPattern = "/",
+    launch.browser = TRUE,  # NEW
+    ...
 ) {
   with_golem_options(
     app = shinyApp(
@@ -24,5 +25,7 @@ run_app <- function(
       uiPattern = uiPattern
     ),
     golem_opts = list(...)
-  )
+  ) -> app
+
+  shiny::runApp(app, launch.browser = launch.browser)  # RUN with browser
 }
