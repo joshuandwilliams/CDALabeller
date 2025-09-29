@@ -2,18 +2,38 @@
 #'
 #' @param request Internal parameter for `{shiny}`.
 #'
-#' @import shiny
+#' @importFrom shiny tagList fluidPage h2 tags imageOutput fluidRow column actionButton textOutput span
+#' @importFrom shinyFiles shinyDirButton
 #' @noRd
 app_ui <- function(request) {
   tagList(
     golem_add_external_resources(),
     fluidPage(
-      h2("Basic Golem App"),
-      h3("Live Reload Test"),
-      sliderInput("my_slider", "A New Slider:", min = 0, max = 100, value = 50),
-      actionButton("my_button", "Click Me"),
-      verbatimTextOutput("server_response")
+      h2("Cell Death Area Labeller"),
+
+      shinyDirButton(
+        "user_folder",
+        "Choose a folder",
+        "Please select a folder containing TIFF images"
+      ),
+
+      tags$div(
+        id = "image-container",
+        imageOutput("output_image", height = "auto"),
+        tags$canvas(id = "myCanvas")
+      ),
+
+      fluidRow(
+        column(4, actionButton("prev_image", "Previous")),
+        column(4, textOutput("image_counter", container = span)),
+        column(4, actionButton("next_image", "Next"))
+      ),
+
+      fluidRow(
+        column(6, actionButton("undoButton", "Undo Last Box")),
+        column(6, actionButton("save_boxes", "Save Boxes to Folder"))
       )
+    )
   )
 }
 
@@ -22,8 +42,8 @@ app_ui <- function(request) {
 #' This function is internally used to add external
 #' resources inside the Shiny application.
 #'
-#' @import shiny
-#' @importFrom golem add_resource_path activate_js favicon bundle_resources
+#' @importFrom golem add_resource_path favicon bundle_resources
+#' @importFrom shiny tags
 #' @noRd
 golem_add_external_resources <- function() {
   add_resource_path("www", app_sys("app/www"))
@@ -33,7 +53,7 @@ golem_add_external_resources <- function() {
       path = app_sys("app/www"),
       app_title = "CDALabeller"
     ),
-    tags$link(rel = "stylesheet", type = "text/css", href = "www/custom.css"),
+    tags$link(rel = "stylesheet", type = "text/css", href = "www/styles.css"),
     tags$script(src = "www/script.js")
   )
 }
