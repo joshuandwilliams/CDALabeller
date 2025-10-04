@@ -11,10 +11,11 @@ app_ui <- function(request) {
     fluidPage(
       h2("Cell Death Area Labeller"),
 
-      shinyDirButton(
-        "user_folder",
-        "Choose a folder",
-        "Please select a folder containing TIFF images"
+      fileInput(
+        "image_upload",
+        "Choose TIFF images",
+        multiple = TRUE,
+        accept = c(".tif", ".tiff")
       ),
 
       tags$div(
@@ -31,7 +32,7 @@ app_ui <- function(request) {
 
       fluidRow(
         column(6, actionButton("undoButton", "Undo Last Box")),
-        column(6, actionButton("save_boxes", "Save Boxes to Folder"))
+        column(6, downloadButton("download_data", "Download Boxes as CSV"))
       )
     )
   )
