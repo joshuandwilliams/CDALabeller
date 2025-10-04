@@ -12,8 +12,6 @@ options("shiny.maxRequestSize" = 200 * 1024^2) # Uploads up to 200MB
 app_server <- function(input, output, session) {
   session$onSessionEnded(stopApp)
 
-  shinyDirChoose(input, "user_folder", roots = c(home = "~"))
-
   process_image <- function(filepath, max_width = 1200, max_height = 1200) {
     base::cat("Processing image...\n")
 
@@ -42,31 +40,23 @@ app_server <- function(input, output, session) {
   # Store all bounding boxes for all images
   all_boxes <- reactiveVal(list())
 
-  observeEvent(input$user_folder, {
-    folder_path <- parseDirPath(roots = c(home = "~"), selection = input$user_folder)
+  observeEvent(input$image_upload, {
+    # Require that files have been uploaded to proceed
+    req(input$image_upload)
 
-    if (is.null(folder_path) || length(folder_path) == 0 || is.na(folder_path) || folder_path == "") {
-      return(NULL)
-    }
+    # Optional: Log the number of files uploaded to the R console
+    base::cat("User uploaded", nrow(input$image_upload), "images\n")
 
-    base::cat("User selected folder:", folder_path, "\n")
+    # The 'input$image_upload' is a dataframe containing file information.
+    # We store the entire dataframe, which includes 'name' for display
+    # and 'datapath' for the temporary server-side file path.
+    image_files(input$image_upload)
 
-    tiffs <- base::list.files(
-      path = folder_path,
-      pattern = "\\.(tif|tiff)$",
-      ignore.case = TRUE,
-      full.names = TRUE
-    )
-
-    if (length(tiffs) == 0) {
-      base::cat("No TIFF images found in folder.\n")
-    } else {
-      base::cat("Found", length(tiffs), "images\n")
-    }
-
-    image_files(tiffs)
+    # Reset the index to the first image
     current_index(1)
-    all_boxes(list()) # Reset boxes when new folder is selected
+
+    # Clear any previously stored bounding boxes
+    all_boxes(list())
   })
 
   processed_path <- reactive({
@@ -74,7 +64,8 @@ app_server <- function(input, output, session) {
     idx <- current_index()
     req(files, idx)
 
-    filepath <- files[idx]
+    # Use the 'datapath' column for the server-side temporary path
+    filepath <- files$datapath[idx]
     process_image(filepath)
   })
 
@@ -94,7 +85,7 @@ app_server <- function(input, output, session) {
     if (is.null(files) || length(files) == 0) {
       return("No images loaded")
     }
-    fname <- base::basename(files[idx])
+    fname <- files$name[idx]
     base::paste0("Image ", idx, " of ", length(files), " – ", fname)
   })
 
@@ -102,7 +93,7 @@ app_server <- function(input, output, session) {
     files <- image_files()
     idx <- current_index()
 
-    original_filename <- base::basename(files[idx])
+    original_filename <- files$name[idx]
 
     session$sendCustomMessage("image_loaded", list(
       filename = original_filename
@@ -145,51 +136,46 @@ app_server <- function(input, output, session) {
     session$sendCustomMessage("undo_last_box", list(filename = base::basename(image_files()[current_index()])))
   })
 
-  observeEvent(input$save_boxes, {
-    folder_path <- parseDirPath(roots = c(home = "~"), selection = input$user_folder)
+  output$download_data <- downloadHandler(
+    filename = function() {
+      # This function determines the name of the file the user will download.
+      timestamp <- base::format(base::Sys.time(), "%Y%m%d_%H%M%S")
+      base::paste0("bounding_boxes_", timestamp, ".csv")
+    },
+    content = function(file) {
+      # This function generates the content of the file.
+      # 'file' is a temporary file path on the server provided by Shiny.
 
-    if (is.null(folder_path) || length(folder_path) == 0 || folder_path == "") {
-      showNotification("Please select a folder first!", type = "error")
-      return()
+      boxes_list <- all_boxes()
+
+      # Stop if there is no data to save.
+      if (is.null(boxes_list) || length(boxes_list) == 0) {
+        return(NULL)
+      }
+
+      # Use your existing logic to convert the list of boxes into a single data frame.
+      all_boxes_df <- base::do.call(base::rbind, base::lapply(base::names(boxes_list), function(image_name) {
+        boxes <- boxes_list[[image_name]]
+        if (is.null(boxes) || length(boxes) == 0) return(NULL)
+
+        base::data.frame(
+          image = image_name,
+          x1 = base::sapply(boxes, function(b) b$x1),
+          y1 = base::sapply(boxes, function(b) b$y1),
+          x2 = base::sapply(boxes, function(b) b$x2),
+          y2 = base::sapply(boxes, function(b) b$y2),
+          stringsAsFactors = FALSE
+        )
+      }))
+
+      # Another check to ensure the final dataframe is not empty.
+      if (is.null(all_boxes_df) || nrow(all_boxes_df) == 0) {
+        return(NULL)
+      }
+
+      # Write the data frame to the temporary file path provided by Shiny.
+      # This file is then sent to the user's browser for download.
+      utils::write.csv(all_boxes_df, file, row.names = FALSE)
     }
-
-    timestamp <- base::format(base::Sys.time(), "%Y%m%d_%H%M%S")
-    csv_filename <- base::paste0("bounding_boxes_", timestamp, ".csv")
-    csv_path <- base::file.path(folder_path, csv_filename)
-
-    boxes_list <- all_boxes()
-
-    if (is.null(boxes_list) || length(boxes_list) == 0) {
-      showNotification("No boxes to save!", type = "error")
-      return()
-    }
-
-    all_boxes_df <- base::do.call(base::rbind, base::lapply(base::names(boxes_list), function(image_name) {
-      boxes <- boxes_list[[image_name]]
-      if (is.null(boxes) || length(boxes) == 0) return(NULL)
-
-      base::data.frame(
-        image = image_name,
-        x1 = base::sapply(boxes, function(b) b$x1),
-        y1 = base::sapply(boxes, function(b) b$y1),
-        x2 = base::sapply(boxes, function(b) b$x2),
-        y2 = base::sapply(boxes, function(b) b$y2),
-        stringsAsFactors = FALSE
-      )
-    }))
-
-    if (is.null(all_boxes_df) || nrow(all_boxes_df) == 0) {
-      showNotification("No boxes to save!", type = "error")
-      return()
-    }
-
-    tryCatch({
-      write.csv(all_boxes_df, csv_path, row.names = FALSE)
-      showNotification(base::paste("Saved", nrow(all_boxes_df), "boxes to", base::basename(csv_path)), type = "message", duration = 5)
-      base::cat("Successfully saved", nrow(all_boxes_df), "boxes to", csv_path, "\n")
-    }, error = function(e) {
-      showNotification(base::paste("Error saving file:", e$message), type = "error", duration = 10)
-      base::cat("Error saving CSV:", e$message, "\n")
-    })
-  })
+  )
 }
