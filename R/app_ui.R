@@ -31,6 +31,10 @@ app_ui <- function(request) {
       ),
 
       fluidRow(
+        column(12, textInput("treatment_input", "Treatment:", placeholder = "Enter treatment for the last box"))
+      ),
+
+      fluidRow(
         column(6, actionButton("undoButton", "Undo Last Box")),
         column(6, downloadButton("download_data", "Download Boxes as CSV"))
       )
