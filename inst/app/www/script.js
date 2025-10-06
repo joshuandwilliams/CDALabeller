@@ -3,6 +3,8 @@ var canvas = null;
 var ctx = null;
 var drawnBoxesPerImage = {}; // Object to store boxes for each image: { "image1.tif": [{box1}, {box2}], ... }
 var currentImage = null; // Track which image is currently displayed
+var originalImageWidth = 0;
+var originalImageHeight = 0;
 
 // Global functions: Redraw is global so the Shiny handler and drawing functions can all call it.
 function redraw() {
@@ -31,15 +33,65 @@ function redraw() {
 
   if (currentImage && drawnBoxesPerImage[currentImage]) {
     drawnBoxesPerImage[currentImage].forEach(box => {
-      // Convert relative coordinates back to absolute pixel values
-      const pixelX = box.x1 * canvas.width;
-      const pixelY = box.y1 * canvas.height;
-      const pixelWidth = (box.x2 - box.x1) * canvas.width;
-      const pixelHeight = (box.y2 - box.y1) * canvas.height;
+      // Convert absolute integer coordinates back to relative display coordinates
+      const pixelX = (box.x1 / originalImageWidth) * canvas.width;
+      const pixelY = (box.y1 / originalImageHeight) * canvas.height;
+      const pixelWidth = ((box.x2 - box.x1) / originalImageWidth) * canvas.width;
+      const pixelHeight = ((box.y2 - box.y1) / originalImageHeight) * canvas.height;
       ctx.strokeRect(pixelX, pixelY, pixelWidth, pixelHeight);
     });
   } else {
   }
+}
+
+function makeSquare(box, imgWidth, imgHeight) {
+  let { x1, y1, x2, y2 } = box;
+
+  const hlen = x2 - x1;
+  const vlen = y2 - y1;
+
+  if (hlen === vlen) return box;
+
+  const diff = Math.abs(hlen - vlen);
+  const halfDiff = diff / 2;
+
+  if (hlen > vlen) { // Box is wider than it is tall
+    y1 -= halfDiff;
+    y2 += halfDiff;
+  } else { // Box is taller than it is wide
+    x1 -= halfDiff;
+    x2 += halfDiff;
+  }
+
+  // Boundary checks to shift box if it goes out of bounds
+  if (x1 < 0) {
+    const shift = -x1;
+    x1 += shift;
+    x2 += shift;
+  }
+  if (x2 > imgWidth) {
+    const shift = x2 - imgWidth;
+    x1 -= shift;
+    x2 -= shift;
+  }
+  if (y1 < 0) {
+    const shift = -y1;
+    y1 += shift;
+    y2 += shift;
+  }
+  if (y2 > imgHeight) {
+    const shift = y2 - imgHeight;
+    y1 -= shift;
+    y2 -= shift;
+  }
+
+  // Final rounding to ensure integer coordinates
+  return {
+    x1: Math.round(x1),
+    y1: Math.round(y1),
+    x2: Math.round(x2),
+    y2: Math.round(y2)
+  };
 }
 
 // Function to ensure canvas is properly sized when image loads
@@ -130,25 +182,35 @@ document.addEventListener('DOMContentLoaded', function() {
       const endX = e.offsetX;
       const endY = e.offsetY;
 
-      // Create box with normalized coordinates (0-1 range)
-      const newBox = {
-        x1: Math.min(startX, endX) / canvas.width,
-        y1: Math.min(startY, endY) / canvas.height,
-        x2: Math.max(startX, endX) / canvas.width,
-        y2: Math.max(startY, endY) / canvas.height
+      // Create box with absolute integer coordinates relative to original image size
+      let newBox = {
+        x1: Math.round((Math.min(startX, endX) / canvas.width) * originalImageWidth),
+        y1: Math.round((Math.min(startY, endY) / canvas.height) * originalImageHeight),
+        x2: Math.round((Math.max(startX, endX) / canvas.width) * originalImageWidth),
+        y2: Math.round((Math.max(startY, endY) / canvas.height) * originalImageHeight),
+        treatment: "" // Initialize with empty treatment
       };
+
+      // Convert the new box to a square
+      const squaredBox = makeSquare(newBox, originalImageWidth, originalImageHeight);
 
       // Initialize array for this image if it doesn't exist
       if (!drawnBoxesPerImage[currentImage]) {
         drawnBoxesPerImage[currentImage] = [];
       }
 
-      // Add the new box to the current image's array
-      drawnBoxesPerImage[currentImage].push(newBox);
+      // Add the new SQUARED box to the current image's array
+      drawnBoxesPerImage[currentImage].push(squaredBox);
 
       console.log("Box added. Total boxes for", currentImage, ":", drawnBoxesPerImage[currentImage].length);
 
       redraw();
+
+      // Enable, clear, and focus the treatment input for the new box
+      const treatmentInput = document.getElementById('treatment_input');
+      treatmentInput.disabled = false;
+      treatmentInput.value = "";
+      treatmentInput.focus();
 
       // Send the box data back to R with filename and all boxes for this image
       Shiny.setInputValue("bbox_coords", {
@@ -158,8 +220,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /* Event Listeners for Drawing */
+    /* Event Listeners for Drawing */
     canvas.addEventListener('mousedown', (e) => {
       if (!isReady) return;
+
+      // Check if the last box needs a treatment before allowing a new one
+      if (currentImage && drawnBoxesPerImage[currentImage] && drawnBoxesPerImage[currentImage].length > 0) {
+        const lastBox = drawnBoxesPerImage[currentImage].slice(-1)[0];
+        if (!lastBox.treatment || lastBox.treatment.trim() === "") {
+          const treatmentInput = document.getElementById('treatment_input');
+          // Flash the input box to alert the user and focus it
+          treatmentInput.style.transition = 'background-color 0.1s';
+          treatmentInput.style.backgroundColor = '#ffdddd';
+          setTimeout(() => {
+            treatmentInput.style.backgroundColor = '';
+          }, 500);
+          treatmentInput.focus();
+          return; // Block drawing
+        }
+      }
+
       isDrawing = true;
       startX = e.offsetX;
       startY = e.offsetY;
@@ -189,8 +269,21 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("Event listeners attached");
 
     function undoLastBox() {
+      const treatmentInput = document.getElementById('treatment_input');
       if (currentImage && drawnBoxesPerImage[currentImage] && drawnBoxesPerImage[currentImage].length > 0) {
-        drawnBoxesPerImage[currentImage].pop();
+        drawnBoxesPerImage[currentImage].pop(); // Remove the last box
+
+        const boxes = drawnBoxesPerImage[currentImage];
+        const newLastBox = boxes && boxes.length > 0 ? boxes.slice(-1)[0] : null;
+
+        // Update the treatment input to reflect the new state
+        if (newLastBox) {
+          treatmentInput.value = newLastBox.treatment;
+        } else {
+          treatmentInput.value = "";
+          treatmentInput.disabled = true; // Disable if no boxes are left
+        }
+
         redraw();
         Shiny.setInputValue("bbox_coords", {
           filename: currentImage,
@@ -200,6 +293,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById("undoButton").addEventListener("click", undoLastBox);
+
+    const treatmentInput = document.getElementById('treatment_input');
+    treatmentInput.disabled = true; // Disable the input on page load
+
+    treatmentInput.addEventListener('input', () => {
+      if (currentImage && drawnBoxesPerImage[currentImage] && drawnBoxesPerImage[currentImage].length > 0) {
+        const lastBox = drawnBoxesPerImage[currentImage].slice(-1)[0];
+        lastBox.treatment = treatmentInput.value;
+
+        // Resend data to R on every keystroke to keep it in sync
+        Shiny.setInputValue("bbox_coords", {
+          filename: currentImage,
+          boxes: drawnBoxesPerImage[currentImage]
+        });
+      }
+    });
   }
 });
 
@@ -207,9 +316,30 @@ document.addEventListener('DOMContentLoaded', function() {
 Shiny.addCustomMessageHandler("image_loaded", function(message) {
   console.log("Message received from R - Image loaded:", message.filename);
 
-  // Update the current image filename
+  // Update the current image filename and original dimensions
   currentImage = message.filename;
+  originalImageWidth = message.width;
+  originalImageHeight = message.height;
+
+  // Set the state of the treatment input based on the new image's data
+  const treatmentInput = document.getElementById('treatment_input');
+  const boxes = drawnBoxesPerImage[currentImage];
+  const lastBox = boxes && boxes.length > 0 ? boxes.slice(-1)[0] : null;
+
+  if (lastBox) {
+    treatmentInput.disabled = false;
+    treatmentInput.value = lastBox.treatment;
+  } else {
+    treatmentInput.disabled = true;
+    treatmentInput.value = "";
+  }
 
   // Ensure canvas is properly sized and boxes are redrawn for this image
   setTimeout(ensureCanvasSize, 100);
+});
+
+// Shiny message handler - called when a new file upload starts
+Shiny.addCustomMessageHandler("clear_client_state", function(message) {
+  console.log("New file upload detected. Clearing client-side box data.");
+  drawnBoxesPerImage = {};
 });

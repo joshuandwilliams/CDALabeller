@@ -1,84 +1,56 @@
+source("R/server_utils.R")
 options("shiny.maxRequestSize" = 200 * 1024^2) # Uploads up to 200MB
 
-#' The application server-side logic
+#' The application server-side logic.
 #'
 #' @param input,output,session Internal parameters for `{shiny}`.
 #'
-#' @importFrom magick image_convert image_info image_read image_scale image_write
-#' @importFrom shiny observeEvent reactive reactiveVal req renderImage renderText showNotification stopApp
-#' @importFrom shinyFiles parseDirPath shinyDirChoose
+#' @importFrom shiny observeEvent reactive reactiveVal req renderImage renderText stopApp
 #' @importFrom utils write.csv
 #' @noRd
 app_server <- function(input, output, session) {
+
   session$onSessionEnded(stopApp)
-
-  process_image <- function(filepath, max_width = 1200, max_height = 1200) {
-    base::cat("Processing image...\n")
-
-    img <- image_read(filepath)
-    base::cat("Original image size:", image_info(img)$width, "x", image_info(img)$height, "\n")
-
-    # Resize while preserving aspect ratio
-    img <- image_scale(img, paste0(max_width, "x", max_height, ">"))
-
-    base::cat("Resized image size:", image_info(img)$width, "x", image_info(img)$height, "\n")
-
-    # Convert to JPEG
-    img <- image_convert(img, format = "jpeg")
-
-    # Save to temporary file
-    out_path <- base::tempfile(fileext = ".jpg")
-    image_write(img, path = out_path, format = "jpeg", quality = 85)
-
-    base::cat("Saved processed image to:", out_path, "\n")
-    return(out_path)
-  }
 
   image_files <- reactiveVal(NULL)
   current_index <- reactiveVal(1)
-
-  # Store all bounding boxes for all images
   all_boxes <- reactiveVal(list())
 
+
+  # Event: User uploads images using fileInput()
   observeEvent(input$image_upload, {
-    # Require that files have been uploaded to proceed
     req(input$image_upload)
+    session$sendCustomMessage("clear_client_state", list())
 
-    # Optional: Log the number of files uploaded to the R console
-    base::cat("User uploaded", nrow(input$image_upload), "images\n")
+    image_files(input$image_upload) # input$image_upload contains 'name' for display and 'datapath' for temp server-side filepath
 
-    # The 'input$image_upload' is a dataframe containing file information.
-    # We store the entire dataframe, which includes 'name' for display
-    # and 'datapath' for the temporary server-side file path.
-    image_files(input$image_upload)
-
-    # Reset the index to the first image
     current_index(1)
-
-    # Clear any previously stored bounding boxes
     all_boxes(list())
   })
 
-  processed_path <- reactive({
+
+  # Reactive Object: Current image metadata
+  processed_image_info <- reactive({
     files <- image_files()
     idx <- current_index()
     req(files, idx)
-
-    # Use the 'datapath' column for the server-side temporary path
     filepath <- files$datapath[idx]
     process_image(filepath)
   })
 
-  output$output_image <- renderImage({
-    req(processed_path())
 
+  # Output: Send image to UI. Re-runs each time the user clicks "Next" or "Previous"
+  output$output_image <- renderImage({
+    req(processed_image_info())
     list(
-      src = processed_path(),
+      src = processed_image_info()$path,
       contentType = "image/jpeg",
       alt = paste("Image", current_index())
     )
   }, deleteFile = TRUE)
 
+
+  # Output: Send text to UI e.g. "Image 3 of 4 - image_3.tif"
   output$image_counter <- renderText({
     files <- image_files()
     idx <- current_index()
@@ -89,33 +61,37 @@ app_server <- function(input, output, session) {
     base::paste0("Image ", idx, " of ", length(files), " – ", fname)
   })
 
-  observeEvent(processed_path(), {
+
+  # Event: Tell JavaScript when a new image has been processed
+  observeEvent(processed_image_info(), {
     files <- image_files()
     idx <- current_index()
+    p_info <- processed_image_info()
+    req(p_info)
 
     original_filename <- files$name[idx]
 
     session$sendCustomMessage("image_loaded", list(
-      filename = original_filename
+      filename = original_filename,
+      width = p_info$original_width,
+      height = p_info$original_height
     ))
   })
 
-  observeEvent(input$bbox_coords, {
-    base::cat("Received Bounding Box Coordinates from JS\n")
 
+  # Event: Update all_boxes() with current annotations
+  observeEvent(input$bbox_coords, {
     if (!is.null(input$bbox_coords)) {
       filename <- input$bbox_coords$filename
       boxes <- input$bbox_coords$boxes
-
-      base::cat("Filename:", filename, "\n")
-      base::cat("Number of boxes:", length(boxes), "\n")
-
       current_boxes <- all_boxes()
       current_boxes[[filename]] <- boxes
       all_boxes(current_boxes)
     }
   })
 
+
+  # Event: Next image button
   observeEvent(input$next_image, {
     req(image_files())
     idx <- current_index()
@@ -124,6 +100,8 @@ app_server <- function(input, output, session) {
     }
   })
 
+
+  # Event: Prev image button
   observeEvent(input$prev_image, {
     req(image_files())
     idx <- current_index()
@@ -132,43 +110,45 @@ app_server <- function(input, output, session) {
     }
   })
 
+
+  # Event: Tell JavaScript to undo last box
   observeEvent(input$undo_box, {
     session$sendCustomMessage("undo_last_box", list(filename = base::basename(image_files()[current_index()])))
   })
 
+
+  # Output: Save annotation data to CSV (browser download)
   output$download_data <- downloadHandler(
+
     filename = function() {
-      # This function determines the name of the file the user will download.
       timestamp <- base::format(base::Sys.time(), "%Y%m%d_%H%M%S")
       base::paste0("bounding_boxes_", timestamp, ".csv")
     },
+
     content = function(file) {
-      # This function generates the content of the file.
-      # 'file' is a temporary file path on the server provided by Shiny.
-
       boxes_list <- all_boxes()
-
-      # Stop if there is no data to save.
       if (is.null(boxes_list) || length(boxes_list) == 0) {
         return(NULL)
       }
 
-      # Use your existing logic to convert the list of boxes into a single data frame.
-      all_boxes_df <- base::do.call(base::rbind, base::lapply(base::names(boxes_list), function(image_name) {
+      # Convert list of boxes to dataframe
+      all_boxes_df <- do.call(rbind, lapply(names(boxes_list), function(image_name) {
         boxes <- boxes_list[[image_name]]
+
         if (is.null(boxes) || length(boxes) == 0) return(NULL)
 
-        base::data.frame(
+        data.frame(
           image = image_name,
-          x1 = base::sapply(boxes, function(b) b$x1),
-          y1 = base::sapply(boxes, function(b) b$y1),
-          x2 = base::sapply(boxes, function(b) b$x2),
-          y2 = base::sapply(boxes, function(b) b$y2),
+          x1 = sapply(boxes, function(b) b$x1),
+          y1 = sapply(boxes, function(b) b$y1),
+          x2 = sapply(boxes, function(b) b$x2),
+          y2 = sapply(boxes, function(b) b$y2),
+          treatment = sapply(boxes, function(b) ifelse(is.null(b$treatment), NA, b$treatment)),
           stringsAsFactors = FALSE
         )
       }))
 
-      # Another check to ensure the final dataframe is not empty.
+      # Ensure the final dataframe is not empty.
       if (is.null(all_boxes_df) || nrow(all_boxes_df) == 0) {
         return(NULL)
       }
