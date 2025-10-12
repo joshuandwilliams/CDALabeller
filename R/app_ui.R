@@ -31,7 +31,8 @@ app_ui <- function(request) {
       ),
 
       fluidRow(
-        column(12, textInput("treatment_input", "Treatment:", placeholder = "Enter treatment for the last box"))
+        # This will be populated by the renderUI in the server
+        column(12, uiOutput("dynamic_inputs"))
       ),
 
       fluidRow(

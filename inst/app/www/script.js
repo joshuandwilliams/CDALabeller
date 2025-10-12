@@ -5,6 +5,7 @@ var drawnBoxesPerImage = {}; // Object to store boxes for each image: { "image1.
 var currentImage = null; // Track which image is currently displayed
 var originalImageWidth = 0;
 var originalImageHeight = 0;
+var requiredFields = []; // Will be populated by R, e.g., ["treatment", "score"]
 
 // Global functions: Redraw is global so the Shiny handler and drawing functions can all call it.
 function redraw() {
@@ -144,6 +145,12 @@ function ensureCanvasSize() {
   }
 }
 
+// Shiny message handler to receive field configuration from R
+Shiny.addCustomMessageHandler("configure_fields", function(fields) {
+  console.log("Configuring required fields:", fields);
+  requiredFields = fields;
+});
+
 // Page initialisation and event listeners
 var listenersAttached = false; // Flag to prevent duplicate listeners
 
@@ -188,8 +195,12 @@ document.addEventListener('DOMContentLoaded', function() {
         y1: Math.round((Math.min(startY, endY) / canvas.height) * originalImageHeight),
         x2: Math.round((Math.max(startX, endX) / canvas.width) * originalImageWidth),
         y2: Math.round((Math.max(startY, endY) / canvas.height) * originalImageHeight),
-        treatment: "" // Initialize with empty treatment
       };
+
+      // Dynamically initialize required fields
+      requiredFields.forEach(field => {
+        newBox[field] = "";
+      });
 
       // Convert the new box to a square
       const squaredBox = makeSquare(newBox, originalImageWidth, originalImageHeight);
@@ -206,11 +217,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
       redraw();
 
-      // Enable, clear, and focus the treatment input for the new box
-      const treatmentInput = document.getElementById('treatment_input');
-      treatmentInput.disabled = false;
-      treatmentInput.value = "";
-      treatmentInput.focus();
+      // Enable, clear, and focus the relevant input(s)
+      requiredFields.forEach((field, index) => {
+        const inputEl = document.getElementById(field + '_input');
+        if (inputEl) {
+          inputEl.disabled = false;
+          inputEl.value = "";
+          // Focus on the first input
+          if (index === 0) {
+            inputEl.focus();
+          }
+        }
+      });
 
       // Send the box data back to R with filename and all boxes for this image
       Shiny.setInputValue("bbox_coords", {
@@ -220,22 +238,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /* Event Listeners for Drawing */
-    /* Event Listeners for Drawing */
     canvas.addEventListener('mousedown', (e) => {
       if (!isReady) return;
 
-      // Check if the last box needs a treatment before allowing a new one
+      // Check if the last box has all required fields filled before allowing a new one
       if (currentImage && drawnBoxesPerImage[currentImage] && drawnBoxesPerImage[currentImage].length > 0) {
         const lastBox = drawnBoxesPerImage[currentImage].slice(-1)[0];
-        if (!lastBox.treatment || lastBox.treatment.trim() === "") {
-          const treatmentInput = document.getElementById('treatment_input');
-          // Flash the input box to alert the user and focus it
-          treatmentInput.style.transition = 'background-color 0.1s';
-          treatmentInput.style.backgroundColor = '#ffdddd';
-          setTimeout(() => {
-            treatmentInput.style.backgroundColor = '';
-          }, 500);
-          treatmentInput.focus();
+
+        // Find the first required field that is empty
+        const firstEmptyField = requiredFields.find(field => !lastBox[field] || lastBox[field].toString().trim() === "");
+
+        if (firstEmptyField) {
+          // Find the corresponding input element to flash and focus
+          const inputToFocus = document.getElementById(firstEmptyField + '_input');
+          if (inputToFocus) {
+            inputToFocus.style.transition = 'background-color 0.1s';
+            inputToFocus.style.backgroundColor = '#ffdddd';
+            setTimeout(() => {
+              inputToFocus.style.backgroundColor = '';
+            }, 500);
+            inputToFocus.focus();
+          }
           return; // Block drawing
         }
       }
@@ -268,21 +291,26 @@ document.addEventListener('DOMContentLoaded', function() {
     listenersAttached = true;
     console.log("Event listeners attached");
 
-    function undoLastBox() {
-      const treatmentInput = document.getElementById('treatment_input');
+   function undoLastBox() {
       if (currentImage && drawnBoxesPerImage[currentImage] && drawnBoxesPerImage[currentImage].length > 0) {
         drawnBoxesPerImage[currentImage].pop(); // Remove the last box
 
         const boxes = drawnBoxesPerImage[currentImage];
         const newLastBox = boxes && boxes.length > 0 ? boxes.slice(-1)[0] : null;
 
-        // Update the treatment input to reflect the new state
-        if (newLastBox) {
-          treatmentInput.value = newLastBox.treatment;
-        } else {
-          treatmentInput.value = "";
-          treatmentInput.disabled = true; // Disable if no boxes are left
-        }
+        // Update all relevant inputs to reflect the new state
+        requiredFields.forEach(field => {
+            const inputEl = document.getElementById(field + '_input');
+            if (inputEl) {
+                if (newLastBox) {
+                    inputEl.value = newLastBox[field] || "";
+                    inputEl.disabled = false;
+                } else {
+                    inputEl.value = "";
+                    inputEl.disabled = true; // Disable if no boxes are left
+                }
+            }
+        });
 
         redraw();
         Shiny.setInputValue("bbox_coords", {
@@ -294,48 +322,82 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById("undoButton").addEventListener("click", undoLastBox);
 
-    const treatmentInput = document.getElementById('treatment_input');
-    treatmentInput.disabled = true; // Disable the input on page load
+    // This is a generic function that will update the last box's data
+    function updateLastBoxField(field, value) {
+        if (currentImage && drawnBoxesPerImage[currentImage] && drawnBoxesPerImage[currentImage].length > 0) {
+            const lastBox = drawnBoxesPerImage[currentImage].slice(-1)[0];
+            lastBox[field] = value;
 
-    treatmentInput.addEventListener('input', () => {
-      if (currentImage && drawnBoxesPerImage[currentImage] && drawnBoxesPerImage[currentImage].length > 0) {
-        const lastBox = drawnBoxesPerImage[currentImage].slice(-1)[0];
-        lastBox.treatment = treatmentInput.value;
+            // Resend data to R on every keystroke to keep it in sync
+            Shiny.setInputValue("bbox_coords", {
+                filename: currentImage,
+                boxes: drawnBoxesPerImage[currentImage]
+            });
+        }
+    }
 
-        // Resend data to R on every keystroke to keep it in sync
-        Shiny.setInputValue("bbox_coords", {
-          filename: currentImage,
-          boxes: drawnBoxesPerImage[currentImage]
-        });
-      }
+    // Since inputs are dynamic, we use event delegation on a static parent.
+    // This listener will catch events from inputs even if they are added later.
+    document.addEventListener('input', function(e) {
+        if (e.target.id === 'treatment_input') {
+            updateLastBoxField('treatment', e.target.value);
+        } else if (e.target.id === 'score_input') {
+            // Basic validation to allow only numbers and a single decimal point
+            const sanitizedValue = e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+            e.target.value = sanitizedValue;
+            updateLastBoxField('score', sanitizedValue);
+        }
     });
+
+    // Disable any inputs that might exist on page load
+    // Note: This part is less critical because the UI is now dynamically generated,
+    // but it's good practice to keep in case of race conditions.
+    const treatmentInput = document.getElementById('treatment_input');
+    if (treatmentInput) treatmentInput.disabled = true;
+    const scoreInput = document.getElementById('score_input');
+    if (scoreInput) scoreInput.disabled = true;
   }
 });
 
 // Shiny message handler - called when R loads a new image
+// Shiny message handler - called when R loads a new image
 Shiny.addCustomMessageHandler("image_loaded", function(message) {
-  console.log("Message received from R - Image loaded:", message.filename);
-
-  // Update the current image filename and original dimensions
+  console.log("Handler 'image_loaded' triggered for:", message.filename);
   currentImage = message.filename;
   originalImageWidth = message.width;
   originalImageHeight = message.height;
+  setTimeout(ensureCanvasSize, 100);
 
-  // Set the state of the treatment input based on the new image's data
-  const treatmentInput = document.getElementById('treatment_input');
-  const boxes = drawnBoxesPerImage[currentImage];
-  const lastBox = boxes && boxes.length > 0 ? boxes.slice(-1)[0] : null;
+  // Function to update input states
+  function updateInputStates() {
+    const boxes = drawnBoxesPerImage[currentImage];
+    const hasBoxes = boxes && boxes.length > 0;
 
-  if (lastBox) {
-    treatmentInput.disabled = false;
-    treatmentInput.value = lastBox.treatment;
-  } else {
-    treatmentInput.disabled = true;
-    treatmentInput.value = "";
+    let allInputsFound = true;
+    requiredFields.forEach(field => {
+      const inputEl = document.getElementById(field + '_input');
+      if (inputEl) {
+        if (hasBoxes) {
+          const lastBox = boxes.slice(-1)[0];
+          inputEl.disabled = false;
+          inputEl.value = lastBox[field] || "";
+        } else {
+          inputEl.disabled = true;
+          inputEl.value = "";
+        }
+      } else {
+        allInputsFound = false;
+      }
+    });
+
+    // If inputs don't exist yet, try again shortly
+    if (!allInputsFound && requiredFields.length > 0) {
+      setTimeout(updateInputStates, 50);
+    }
   }
 
-  // Ensure canvas is properly sized and boxes are redrawn for this image
-  setTimeout(ensureCanvasSize, 100);
+  // Start trying to update input states
+  updateInputStates();
 });
 
 // Shiny message handler - called when a new file upload starts
