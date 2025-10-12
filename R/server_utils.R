@@ -13,7 +13,6 @@
 #'
 #' @importFrom magick image_convert image_info image_read image_scale image_write
 #' @noRd
-
 process_image <- function(filepath, max_width = 1200, max_height = 1200) {
   img <- image_read(filepath)
   info <- image_info(img)

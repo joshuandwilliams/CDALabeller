@@ -12,6 +12,28 @@ app_server <- function(input, output, session) {
 
   session$onSessionEnded(stopApp)
 
+  data_fields <- reactiveVal(NULL)
+
+  # --- Show a modal on startup to ask the user which fields to collect ---
+  showModal(modalDialog(
+    title = "Select Data to Collect",
+    p("Choose the data fields you want to record for each bounding box."),
+    checkboxGroupInput("field_selection", "Fields:",
+                       choices = c("treatment", "score"),
+                       selected = "treatment"),
+    footer = actionButton("confirm_fields", "Start Labelling")
+  ))
+
+  # --- When user confirms their choice, store it and configure the client-side ---
+  observeEvent(input$confirm_fields, {
+    req(input$field_selection)
+    selected_fields <- input$field_selection
+    data_fields(selected_fields)
+    # Wrap in as.list() to ensure it's always a JSON array on the client-side
+    session$sendCustomMessage("configure_fields", as.list(selected_fields))
+    removeModal()
+  })
+
   image_files <- reactiveVal(NULL)
   current_index <- reactiveVal(1)
   all_boxes <- reactiveVal(list())
@@ -116,6 +138,22 @@ app_server <- function(input, output, session) {
     session$sendCustomMessage("undo_last_box", list(filename = base::basename(image_files()[current_index()])))
   })
 
+  # Output: Dynamically render input boxes based on the user's selection from the modal
+  output$dynamic_inputs <- renderUI({
+    fields <- data_fields()
+    req(fields, image_files())
+
+    # Create a list of UI elements
+    inputs <- list()
+    if ("treatment" %in% fields) {
+      inputs <- c(inputs, list(textInput("treatment_input", "Treatment:", placeholder = "Enter treatment for the last box")))
+    }
+    if ("score" %in% fields) {
+      inputs <- c(inputs, list(textInput("score_input", "Score:", placeholder = "Enter score for the last box")))
+    }
+    tagList(inputs)
+  })
+
 
   # Output: Save annotation data to CSV (browser download)
   output$download_data <- downloadHandler(
@@ -137,15 +175,24 @@ app_server <- function(input, output, session) {
 
         if (is.null(boxes) || length(boxes) == 0) return(NULL)
 
-        data.frame(
+        df <- data.frame(
           image = image_name,
           x1 = sapply(boxes, function(b) b$x1),
           y1 = sapply(boxes, function(b) b$y1),
           x2 = sapply(boxes, function(b) b$x2),
           y2 = sapply(boxes, function(b) b$y2),
-          treatment = sapply(boxes, function(b) ifelse(is.null(b$treatment), NA, b$treatment)),
           stringsAsFactors = FALSE
         )
+
+        # Dynamically add columns based on what data was collected
+        if (!is.null(boxes[[1]]$treatment)) {
+          df$treatment <- sapply(boxes, function(b) ifelse(is.null(b$treatment), NA, b$treatment))
+        }
+        if (!is.null(boxes[[1]]$score)) {
+          df$score <- sapply(boxes, function(b) ifelse(is.null(b$score), NA, b$score))
+        }
+
+        df
       }))
 
       # Ensure the final dataframe is not empty.
