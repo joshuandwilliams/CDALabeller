@@ -55,11 +55,8 @@ golem_add_external_resources <- function() {
   add_resource_path("www", app_sys("app/www"))
   tags$head(
     favicon(),
-    bundle_resources(
-      path = app_sys("app/www"),
-      app_title = "CDALabeller"
-    ),
+    tags$title("CDALabeller"),  # This sets the tab name
     tags$link(rel = "stylesheet", type = "text/css", href = "www/styles.css"),
-    tags$script(src = "www/script.js")
+    tags$script(type = "module", src = "www/script.js")
   )
 }
