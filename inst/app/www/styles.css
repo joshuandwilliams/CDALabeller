@@ -114,13 +114,13 @@ h4 {
 
 /* --- Right Column: Controls --- */
 .control-panel {
-  padding-left: 50px; /* Increased side margin */
+  padding-left: 85px; /* Increased side margin */
 }
 
 .control-panel h4:first-of-type {
   /* Adds top margin to align "Step 3" with "Step 2" */
   /* This value accounts for the new, larger h4 and file input */
-  margin-top: 85px;
+  margin-top: 125px;
 }
 
 /* Make all buttons and inputs full width */
