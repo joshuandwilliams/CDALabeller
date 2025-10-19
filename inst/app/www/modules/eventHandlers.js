@@ -32,7 +32,7 @@ export function setupEventListeners() {
       y2: Math.round((Math.max(appState.startY, endY) / appState.canvas.height) * appState.originalImageHeight),
     };
 
-    appState.requiredFields.forEach(field => { newBox[field] = ""; });
+    appState.requiredFields.forEach(field => { newBox[field] = null; });
     const squaredBox = makeSquare(newBox, appState.originalImageWidth, appState.originalImageHeight);
 
     if (!appState.drawnBoxesPerImage[appState.currentImage]) {
@@ -53,27 +53,13 @@ export function setupEventListeners() {
   }
 
   // Validation and start drawing on mouse down
-  appState.canvas.addEventListener('mousedown', (e) => {
-    if (!appState.isReady) return;
-    const boxes = appState.drawnBoxesPerImage[appState.currentImage];
-    if (boxes && boxes.length > 0) {
-      const lastBox = boxes.slice(-1)[0];
-      const firstEmptyField = appState.requiredFields.find(field => !lastBox[field] || lastBox[field].toString().trim() === "");
-      if (firstEmptyField) {
-        const inputToFocus = document.getElementById(firstEmptyField + '_input');
-        if (inputToFocus) {
-          inputToFocus.style.transition = 'background-color 0.1s';
-          inputToFocus.style.backgroundColor = '#ffdddd';
-          setTimeout(() => { inputToFocus.style.backgroundColor = ''; }, 500);
-          inputToFocus.focus();
-        }
-        return;
-      }
-    }
-    appState.isDrawing = true;
-    appState.startX = e.offsetX;
-    appState.startY = e.offsetY;
-  });
+    appState.canvas.addEventListener('mousedown', (e) => {
+      if (!appState.isReady) return;
+      // Removed validation block: drawing is always allowed.
+      appState.isDrawing = true;
+      appState.startX = e.offsetX;
+      appState.startY = e.offsetY;
+    });
 
   // Attach other canvas listeners
   appState.canvas.addEventListener('mousemove', draw);
@@ -98,7 +84,7 @@ export function setupEventListeners() {
         const inputEl = document.getElementById(field + '_input');
         if (inputEl) {
           inputEl.value = newLastBox ? (newLastBox[field] || "") : "";
-          inputEl.disabled = !newLastBox;
+          inputEl.disabled = false; // Always keep inputs enabled
         }
       });
       redraw();

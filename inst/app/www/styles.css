@@ -1,29 +1,156 @@
-/* Sets the container as the positioning anchor. */
-#image-container {
-  position: relative;
-  display: block;
-  max-width: 100vw;
-  max-height: 100vh;
-  overflow: hidden;
-  margin-top: 20px;
-  margin-bottom: 20px;
+/* --- General Layout & Typography --- */
+html {
+  /* This controls the base size for all 'rem' units. */
+  /* Try 20px, 22px, or even 24px to see a big change. */
+  font-size: 20px;
 }
 
-/* Makes the image responsive and unclickable. */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #333;
+  padding: 10px;
+  font-size: 18px; /* Set a larger base font size */
+}
+
+h2 {
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 5px;
+  font-size: 2.2rem; /* Significantly larger title */
+}
+
+.title-container {
+  text-align: center;
+}
+
+.title-container p {
+  font-size: 1.2rem; /* Larger subtitle */
+}
+
+h4 {
+  font-weight: 600;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 1.5rem; /* Make step headings even larger */
+}
+
+.step1-container {
+  display: flex;
+  align-items: baseline; /* Aligns text baselines */
+  gap: 20px; /* Adds space between the heading and the input */
+}
+
+.step1-container h4 {
+  margin-bottom: 0; /* Remove bottom margin as flex gap handles spacing */
+  flex-shrink: 0; /* Prevent the heading from shrinking */
+}
+
+.step1-container .shiny-input-container {
+  margin-bottom: 0; /* Remove default bottom margin */
+  flex-grow: 1; /* Allow the input to fill remaining space */
+  width: auto; /* Override any default width */
+}
+
+.instruction-text {
+  color: #555;
+  font-size: 1.1rem; /* Make instruction text larger */
+  margin-top: 15px;
+  margin-bottom: 15px;
+  line-height: 1.5; /* Add line spacing for readability */
+}
+
+/* --- Global Font Size for Inputs/Buttons --- */
+.btn,
+.form-control {
+  font-size: 1rem; /* Ensures all buttons/inputs use a larger font */
+}
+
+/* --- Main Two-Column Container --- */
+.main-container {
+  margin-top: 20px;
+}
+
+/* --- Left Column: Image --- */
+#image-container {
+  position: relative;
+  display: inline-block; /* Fit to content */
+  width: 100%;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+  min-height: 400px; /* Placeholder height */
+}
+
 #output_image img {
   max-width: 100%;
-  max-height: 100%;
-  width: auto;
   height: auto;
   pointer-events: none;
   display: block;
 }
 
-/* Lifts the canvas and overlays it on the container. */
 #myCanvas {
   position: absolute;
   top: 0;
   left: 0;
-  border: 1px solid white;
+  border: 1px solid #fff;
   visibility: hidden;
+  cursor: crosshair;
+}
+
+.image-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 10px;
+  padding: 5px;
+}
+
+.image-nav span {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.1rem; /* Larger image counter text */
+}
+
+/* --- Right Column: Controls --- */
+.control-panel {
+  padding-left: 50px; /* Increased side margin */
+}
+
+.control-panel h4:first-of-type {
+  /* Adds top margin to align "Step 3" with "Step 2" */
+  /* This value accounts for the new, larger h4 and file input */
+  margin-top: 85px;
+}
+
+/* Make all buttons and inputs full width */
+.control-panel .btn,
+.control-panel .form-control {
+  width: 100%;
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+  margin-bottom: 10px;
+  padding: 8px 12px; /* Add padding to make inputs taller */
+}
+
+.control-panel .shiny-input-container {
+  width: 100%;
+}
+
+.control-panel label {
+  font-weight: normal;
+  margin-bottom: 5px;
+}
+
+/* Download box styling */
+#download-box {
+  border: 2px solid #d9534f;
+  border-radius: 5px;
+  padding: 15px;
+  margin-top: 30px;
+  text-align: center;
+}
+
+#download-box h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
 }

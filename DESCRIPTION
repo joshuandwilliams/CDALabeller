@@ -4,7 +4,7 @@ Version: 0.0.0.9000
 Authors@R: 
     person("Josh", "Williams", , "jowillia@nbi.ac.uk", role = c("aut", "cre"))
 Description: An R Shiny app for labelling cell death areas.
-License: What license is it under?
+License: MIT + file LICENSE
 Imports: 
     config,
     golem,

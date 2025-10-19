@@ -16,7 +16,7 @@ const appState = {
   originalImageHeight: 0,
 
   // Configuration from R/Shiny
-  requiredFields: [], // e.g., ["treatment", "score"]
+  requiredFields: ["treatment", "score"],
 
   // Drawing state
   isDrawing: false,

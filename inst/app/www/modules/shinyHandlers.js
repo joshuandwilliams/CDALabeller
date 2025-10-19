@@ -18,10 +18,6 @@ export function sendAnnotationsToShiny() {
  * Shiny server.
  */
 export function setupShinyListeners() {
-  Shiny.addCustomMessageHandler("configure_fields", function(fields) {
-    appState.requiredFields = fields;
-  });
-
   Shiny.addCustomMessageHandler("image_loaded", function(message) {
     appState.currentImage = message.filename;
     appState.originalImageWidth = message.width;
@@ -37,12 +33,11 @@ export function setupShinyListeners() {
       appState.requiredFields.forEach(field => {
         const inputEl = document.getElementById(field + '_input');
         if (inputEl) {
+          inputEl.disabled = false; // Always enable inputs
           if (hasBoxes) {
             const lastBox = boxes.slice(-1)[0];
-            inputEl.disabled = false;
             inputEl.value = lastBox[field] || "";
           } else {
-            inputEl.disabled = true;
             inputEl.value = "";
           }
         } else {
