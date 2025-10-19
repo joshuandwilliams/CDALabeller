@@ -1,35 +1,3 @@
-#' Handle the startup modal for field selection.
-#'
-#' Shows a modal dialog on application startup to allow the user to select
-#' which data fields to collect. It sets up an observer to handle the
-#' user's confirmation and updates the application state accordingly.
-#'
-#' @param input The Shiny input object from the server function.
-#' @param session The Shiny session object from the server function.
-#' @param data_fields A `reactiveVal` used to store the user-selected fields.
-#'
-#' @importFrom shiny showModal modalDialog p checkboxGroupInput actionButton
-#' @importFrom shiny observeEvent req removeModal
-#' @noRd
-handle_startup_modal <- function(input, session, data_fields) {
-  showModal(modalDialog(
-    title = "Select Data to Collect",
-    p("Choose the data fields you want to record for each bounding box."),
-    checkboxGroupInput("field_selection", "Fields:",
-                       choices = c("treatment", "score"),
-                       selected = "treatment"),
-    footer = actionButton("confirm_fields", "Start Labelling")
-  ))
-
-  observeEvent(input$confirm_fields, {
-    req(input$field_selection)
-    selected_fields <- input$field_selection
-    data_fields(selected_fields)
-    session$sendCustomMessage("configure_fields", as.list(selected_fields))
-    removeModal()
-  })
-}
-
 #' Handle new image uploads and reset application state.
 #'
 #' Sets up an observer for the file input. When new images are uploaded, it
@@ -45,10 +13,12 @@ handle_startup_modal <- function(input, session, data_fields) {
 #' @param all_boxes A `reactiveVal` to store all bounding box annotations.
 #'
 #' @importFrom shiny observeEvent req
+#' @importFrom shinyjs disable
 #' @noRd
 handle_image_upload <- function(input, session, image_files, current_index, all_boxes) {
   observeEvent(input$image_upload, {
     req(input$image_upload)
+    shinyjs::disable("image_upload") # Disable file input after upload
     session$sendCustomMessage("clear_client_state", list())
 
     image_files(input$image_upload)
@@ -202,11 +172,11 @@ render_image_counter <- function(image_files, current_index) {
   renderText({
     files <- image_files()
     idx <- current_index()
-    if (is.null(files) || length(files) == 0) {
+    if (is.null(files) || nrow(files) == 0) {
       return("No images loaded")
     }
     fname <- files$name[idx]
-    base::paste0("Image ", idx, " of ", length(files), " – ", fname)
+    paste0("Image ", idx, " of ", nrow(files), " - ", fname)  # Changed to regular hyphen
   })
 }
 
@@ -269,13 +239,10 @@ format_annotations_for_download <- function(boxes_list) {
       stringsAsFactors = FALSE
     )
 
-    # Dynamically add columns if they exist in the data
-    if (!is.null(boxes[[1]]$treatment)) {
-      df$treatment <- sapply(boxes, function(b) ifelse(is.null(b$treatment), NA, b$treatment))
-    }
-    if (!is.null(boxes[[1]]$score)) {
-      df$score <- sapply(boxes, function(b) ifelse(is.null(b$score), NA, b$score))
-    }
+    # Always add treatment and score columns, replacing null or "" with NA
+    df$treatment <- sapply(boxes, function(b) ifelse(is.null(b$treatment) || b$treatment == "", NA, b$treatment))
+    df$score <- sapply(boxes, function(b) ifelse(is.null(b$score) || b$score == "", NA, b$score))
+
     df
   }))
 

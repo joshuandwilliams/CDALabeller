@@ -1,0 +1,16 @@
+---
+title: "CDALabeller"
+author: "Joshua Williams"
+date: "2025-10-13"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Placeholder for information about CDALabeller package
+
+```{r}
+print("Placeholder")
+```

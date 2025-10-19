@@ -1,4 +1,5 @@
 source("R/server_utils.R")
+# Allow file uploads of up to 200MB
 options("shiny.maxRequestSize" = 200 * 1024^2)
 
 #' The application server-side logic.
@@ -17,7 +18,7 @@ app_server <- function(input, output, session) {
   # 2. Application State Initialization
   # ============================================================================
   # Reactive values to hold the core state of the application.
-  data_fields   <- reactiveVal(NULL)      # Fields to collect (e.g., "treatment")
+  data_fields   <- reactiveVal(c("treatment", "score"))     # Fields to collect
   image_files   <- reactiveVal(NULL)      # Data frame of uploaded image files
   current_index <- reactiveVal(1)         # Index of the current image
   all_boxes     <- reactiveVal(list())    # List storing all annotations
@@ -39,9 +40,6 @@ app_server <- function(input, output, session) {
   # 4. Event Handlers & Observers
   # ============================================================================
   # These functions set up observers that react to user inputs and state changes.
-
-  # Handle the startup modal for selecting data fields.
-  handle_startup_modal(input, session, data_fields)
 
   # Handle new image uploads and reset the application state.
   handle_image_upload(input, session, image_files, current_index, all_boxes)
