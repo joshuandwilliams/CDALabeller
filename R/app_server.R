@@ -1,13 +1,11 @@
 source("R/server_utils.R")
-# Allow file uploads of up to 200MB
-options("shiny.maxRequestSize" = 200 * 1024^2)
 
 #' The application server-side logic.
 #'
 #' @param input,output,session Internal parameters for `{shiny}`.
 #'
 #' @importFrom shiny reactive reactiveVal req stopApp
-#' @noRd
+#' @export
 app_server <- function(input, output, session) {
 
   # 1. Session Management

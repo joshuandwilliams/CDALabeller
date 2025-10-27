@@ -1,0 +1,72 @@
+{
+  "input": {
+    "bbox_coords": {
+      "filename": "_DSC0024.tif",
+      "boxes": [
+        {
+          "x1": 782,
+          "y1": 803,
+          "x2": 1037,
+          "y2": 1058,
+          "treatment": "Treatment1",
+          "score": "0.5"
+        },
+        {
+          "x1": 617,
+          "y1": 1021,
+          "x2": 886,
+          "y2": 1290,
+          "treatment": "Treatment2",
+          "score": "0.8"
+        }
+      ]
+    },
+    "image_upload": {
+      "name": [
+        "_DSC0024.tif",
+        "_DSC0025-AVRPib.tif",
+        "_DSC2689.tif",
+        "_DSC2690.tif"
+      ],
+      "size": [
+        62031840,
+        62038756,
+        47231388,
+        47839224
+      ],
+      "type": [
+        "image/tiff",
+        "image/tiff",
+        "image/tiff",
+        "image/tiff"
+      ],
+      "datapath": [
+        "0.tif",
+        "1.tif",
+        "2.tif",
+        "3.tif"
+      ]
+    },
+    "next_image": 1,
+    "prev_image": 0,
+    "score_input": "0.8",
+    "treatment_input": "Treatment2",
+    "undoButton": 1
+  },
+  "output": {
+    "dynamic_inputs": {
+      "html": "<div class=\"form-group shiny-input-container\">\n  <label class=\"control-label\" id=\"treatment_input-label\" for=\"treatment_input\">Treatment:<\/label>\n  <input id=\"treatment_input\" type=\"text\" class=\"shiny-input-text form-control\" value=\"\" placeholder=\"Enter treatment for the last box\" data-update-on=\"change\"/>\n<\/div>\n<div class=\"form-group shiny-input-container\">\n  <label class=\"control-label\" id=\"score_input-label\" for=\"score_input\">Score:<\/label>\n  <input id=\"score_input\" type=\"text\" class=\"shiny-input-text form-control\" value=\"\" placeholder=\"Enter score for the last box\" data-update-on=\"change\"/>\n<\/div>",
+      "deps": [
+
+      ]
+    },
+    "image_counter": "Image 2 of 4 - _DSC0025-AVRPib.tif",
+    "output_image": {
+      "src": "[image data hash: 8434fb901145617577535f7f0abaceea]",
+      "alt": "Image 2"
+    }
+  },
+  "export": {
+
+  }
+}

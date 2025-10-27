@@ -120,7 +120,7 @@ h4 {
 .control-panel h4:first-of-type {
   /* Adds top margin to align "Step 3" with "Step 2" */
   /* This value accounts for the new, larger h4 and file input */
-  margin-top: 125px;
+  margin-top: 115px;
 }
 
 /* Make all buttons and inputs full width */
@@ -130,6 +130,8 @@ h4 {
   box-sizing: border-box; /* Include padding and border in the element's total width and height */
   margin-bottom: 10px;
   padding: 8px 12px; /* Add padding to make inputs taller */
+  white-space: normal; /* Allow button text to wrap */
+  word-wrap: break-word; /* Break words if necessary */
 }
 
 .control-panel .shiny-input-container {
@@ -139,6 +141,13 @@ h4 {
 .control-panel label {
   font-weight: normal;
   margin-bottom: 5px;
+}
+
+.control-panel hr {
+  margin-top: 25px;    /* Adds buffer above the line */
+  margin-bottom: 25px; /* Adds buffer below the line */
+  border: 0;
+  border-top: 1px solid #eee;
 }
 
 /* Download box styling */
@@ -153,4 +162,5 @@ h4 {
 #download-box h4 {
   margin-top: 0;
   margin-bottom: 15px;
+  word-break: break-word; /* Allow long headings to wrap */
 }

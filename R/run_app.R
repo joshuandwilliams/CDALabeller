@@ -12,7 +12,7 @@ run_app <- function(
     options = list(),
     enableBookmarking = NULL,
     uiPattern = "/",
-    launch.browser = TRUE,  # NEW
+    launch.browser = TRUE,
     ...
 ) {
   with_golem_options(
@@ -27,5 +27,5 @@ run_app <- function(
     golem_opts = list(...)
   ) -> app
 
-  shiny::runApp(app, launch.browser = launch.browser)  # RUN with browser
+  app
 }

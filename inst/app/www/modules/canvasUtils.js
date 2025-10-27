@@ -20,11 +20,21 @@ export function redraw() {
   appState.ctx = appState.canvas.getContext('2d');
   appState.ctx.clearRect(0, 0, appState.canvas.width, appState.canvas.height);
 
-  appState.ctx.strokeStyle = "red";
+  appState.ctx.strokeStyle = "white";
   appState.ctx.lineWidth = 2;
 
   if (appState.currentImage && appState.drawnBoxesPerImage[appState.currentImage]) {
-    appState.drawnBoxesPerImage[appState.currentImage].forEach(box => {
+    const boxes = appState.drawnBoxesPerImage[appState.currentImage];
+    boxes.forEach((box, index) => {
+      // Set style: blue and thick for last box, white for all others
+      if (index === boxes.length - 1) {
+        appState.ctx.strokeStyle = "blue";
+        appState.ctx.lineWidth = 4;
+      } else {
+        appState.ctx.strokeStyle = "white";
+        appState.ctx.lineWidth = 2;
+      }
+
       const pixelX = (box.x1 / appState.originalImageWidth) * appState.canvas.width;
       const pixelY = (box.y1 / appState.originalImageHeight) * appState.canvas.height;
       const pixelWidth = ((box.x2 - box.x1) / appState.originalImageWidth) * appState.canvas.width;
