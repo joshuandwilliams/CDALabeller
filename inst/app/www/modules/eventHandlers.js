@@ -13,8 +13,8 @@ export function setupEventListeners() {
     redraw(); // Redraw existing boxes first
     const currentX = Math.max(0, Math.min(e.offsetX, appState.canvas.width));
     const currentY = Math.max(0, Math.min(e.offsetY, appState.canvas.height));
-    appState.ctx.strokeStyle = "red";
-    appState.ctx.lineWidth = 2;
+    appState.ctx.strokeStyle = "blue";
+    appState.ctx.lineWidth = 4;
     appState.ctx.strokeRect(appState.startX, appState.startY, currentX - appState.startX, currentY - appState.startY);
   }
 
@@ -31,6 +31,16 @@ export function setupEventListeners() {
       x2: Math.round((Math.max(appState.startX, endX) / appState.canvas.width) * appState.originalImageWidth),
       y2: Math.round((Math.max(appState.startY, endY) / appState.canvas.height) * appState.originalImageHeight),
     };
+
+    const boxWidth = newBox.x2 - newBox.x1;
+    const boxHeight = newBox.y2 - newBox.y1;
+    const shortestSide = Math.min(appState.originalImageWidth, appState.originalImageHeight);
+
+    if (boxWidth > shortestSide || boxHeight > shortestSide) {
+      alert(`The box you drew is too large. The maximum size for any side is ${Math.round(shortestSide)} pixels (the shortest side of this image).`);
+      redraw(); // Redraw to clear the in-progress box
+      return;
+    }
 
     appState.requiredFields.forEach(field => { newBox[field] = null; });
     const squaredBox = makeSquare(newBox, appState.originalImageWidth, appState.originalImageHeight);

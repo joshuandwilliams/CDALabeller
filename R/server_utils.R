@@ -18,7 +18,7 @@
 handle_image_upload <- function(input, session, image_files, current_index, all_boxes) {
   observeEvent(input$image_upload, {
     req(input$image_upload)
-    shinyjs::disable("image_upload") # Disable file input after upload
+    shinyjs::disable("image_upload") # Disable file input after
     session$sendCustomMessage("clear_client_state", list())
 
     image_files(input$image_upload)
@@ -268,8 +268,13 @@ format_annotations_for_download <- function(boxes_list) {
 setup_download_handler <- function(all_boxes) {
   downloadHandler(
     filename = function() {
-      timestamp <- base::format(base::Sys.time(), "%Y%m%d_%H%M%S")
-      base::paste0("bounding_boxes_", timestamp, ".csv")
+      # Check if running under testthat/shinytest2
+      if (identical(Sys.getenv("TESTTHAT"), "true")) {
+        return("bounding_boxes_for_test.csv")
+      } else {
+        timestamp <- base::format(base::Sys.time(), "%Y%m%d_%H%M%S")
+        base::paste0("bounding_boxes_", timestamp, ".csv")
+      }
     },
     content = function(file) {
       # Use the pure function to get the data frame

@@ -1,0 +1,30 @@
+{
+  "input": {
+    "image_upload": null,
+    "next_image": 0,
+    "prev_image": 0,
+    "undoButton": 0
+  },
+  "output": {
+    "dynamic_inputs": {
+      "message": "",
+      "call": "NULL",
+      "type": [
+        "shiny.silent.error",
+        "validation"
+      ]
+    },
+    "image_counter": "No images loaded",
+    "output_image": {
+      "message": "",
+      "call": "NULL",
+      "type": [
+        "shiny.silent.error",
+        "validation"
+      ]
+    }
+  },
+  "export": {
+
+  }
+}

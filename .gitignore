@@ -1,1 +1,21 @@
-.Rproj.user
+# R & RStudio temporary files
+.Rproj.user/
+.Rhistory
+.RData
+.Renviron
+.Ruserdata
+
+# macOS and Windows system files
+.DS_Store
+Thumbs.db
+
+# R package build/check artifacts
+*.Rcheck/
+*.tar.gz
+
+# Ignore large test images
+tests/testthat/fixtures/tests/testthat/test-images/*.tif
+tests/testthat/fixtures/tests/testthat/test-images/*.tiff
+
+# {shinytest2}: Ignore new debug snapshots for `$expect_values()`
+*_.new.png

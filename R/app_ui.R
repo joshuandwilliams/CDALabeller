@@ -5,7 +5,7 @@
 #' @importFrom shiny tagList fluidPage h2 tags imageOutput fluidRow column actionButton textOutput span
 #' @importFrom shinyFiles shinyDirButton
 #' @importFrom shinyjs useShinyjs
-#' @noRd
+#' @export
 app_ui <- function(request) {
   tagList(
     golem_add_external_resources(),
@@ -58,9 +58,11 @@ app_ui <- function(request) {
           class = "control-panel",
           tags$h4("Step 3: Enter Treatment / Score Info"),
           uiOutput("dynamic_inputs"),
+          tags$hr(), # <-- ADDED DIVIDING LINE
           tags$p(
             class = "instruction-text",
-            "Repeat steps 2 and 3 to annotate all CDAs in the current image. Then, click ",
+            tags$b("Repeat"), # <-- MADE BOLD
+            " steps 2 and 3 to annotate all CDAs in the current image. Then, click ",
             tags$b("\"Next\""),
             " to proceed to the next image."
           ),
@@ -68,9 +70,13 @@ app_ui <- function(request) {
           tags$p(
             class = "instruction-text",
             "Undo mistakes by clicking ",
-            tags$b("\"Undo Last Box\".")
+            tags$b("\"Undo Last Box\""),
+            " (removes the last box, shown in ",
+            tags$b("blue"),
+            ")."
           ),
           actionButton("undoButton", "Undo Last Box"),
+          tags$hr(),
 
           tags$div(
             id = "download-box",
