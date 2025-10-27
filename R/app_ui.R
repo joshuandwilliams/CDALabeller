@@ -1,8 +1,8 @@
 #' The application User-Interface
 #'
-#' @param request Internal parameter for `{shiny}`.
+#' @param request Internal parameter for \{shiny\}.
 #'
-#' @importFrom shiny tagList fluidPage h2 tags imageOutput fluidRow column actionButton textOutput span
+#' @importFrom shiny tagList fluidPage h2 tags imageOutput fluidRow column actionButton textOutput span fileInput uiOutput downloadButton
 #' @importFrom shinyFiles shinyDirButton
 #' @importFrom shinyjs useShinyjs
 #' @export

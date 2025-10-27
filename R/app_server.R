@@ -2,7 +2,7 @@ source("R/server_utils.R")
 
 #' The application server-side logic.
 #'
-#' @param input,output,session Internal parameters for `{shiny}`.
+#' @param input,output,session Internal parameters for \{shiny\}.
 #'
 #' @importFrom shiny reactive reactiveVal req stopApp
 #' @export
