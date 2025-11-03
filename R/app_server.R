@@ -21,6 +21,12 @@ app_server <- function(input, output, session) {
   current_index <- reactiveVal(1)         # Index of the current image
   all_boxes     <- reactiveVal(list())    # List storing all annotations
 
+  # Hide main app UI elements on startup. They will be shown after image upload.
+  # This hides the "Step 2" title using its new ID
+  shinyjs::hide(selector = "#step2-title")
+  shinyjs::hide(selector = "#image-container")
+  shinyjs::hide(selector = ".image-nav")
+  shinyjs::hide(selector = ".control-panel")
 
   # 3. Core Reactive Logic
   # ============================================================================
@@ -44,6 +50,9 @@ app_server <- function(input, output, session) {
 
   # Handle navigation between images (next/previous buttons).
   handle_image_navigation(input, image_files, current_index)
+
+  # Conditionally show/hide navigation buttons based on index.
+  handle_nav_button_visibility(image_files, current_index)
 
   # Handle the undo button press.
   handle_undo(input, session, image_files, current_index)

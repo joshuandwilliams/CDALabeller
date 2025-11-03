@@ -26,12 +26,12 @@ export function redraw() {
   if (appState.currentImage && appState.drawnBoxesPerImage[appState.currentImage]) {
     const boxes = appState.drawnBoxesPerImage[appState.currentImage];
     boxes.forEach((box, index) => {
-      // Set style: blue and thick for last box, white for all others
+      // Set style: white and thick for last box, blue for all others
       if (index === boxes.length - 1) {
-        appState.ctx.strokeStyle = "blue";
+        appState.ctx.strokeStyle = "white";
         appState.ctx.lineWidth = 4;
       } else {
-        appState.ctx.strokeStyle = "white";
+        appState.ctx.strokeStyle = "blue";
         appState.ctx.lineWidth = 2;
       }
 

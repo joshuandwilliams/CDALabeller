@@ -14,8 +14,8 @@ app_ui <- function(request) {
       # Page Header
       tags$div(
         class = "title-container",
-        h2("Cell Death Area Labeller"),
-        tags$p("Use this tool to draw bounding boxes and annotate cell death areas (CDAs) in your agroinfiltration images.")
+        h2("CDALabeller"),
+        tags$p("Draw bounding box annotations around cell death areas")
       ),
 
       # Main two-column layout
@@ -24,10 +24,10 @@ app_ui <- function(request) {
 
         # Left Column: Image and Navigation
         column(
-          width = 8,
+          width = 9,
           tags$div(
             class = "step1-container",
-            tags$h4("Step 1: Select Images for Upload"),
+            tags$h4("Upload Your Agroinfiltration Images"),
             fileInput(
               "image_upload",
               label = NULL, # Label is provided by the h4
@@ -38,7 +38,7 @@ app_ui <- function(request) {
             )
           ),
 
-          tags$h4("Step 2: Left click, Drag, and Release to Draw a Bounding Box"),
+          tags$h4(id = "step2-title", "Step 1: Draw a Bounding Box (Click and Drag)"),
           tags$div(
             id = "image-container",
             imageOutput("output_image", height = "auto"),
@@ -54,35 +54,23 @@ app_ui <- function(request) {
 
         # Right Column: Controls and Data Entry
         column(
-          width = 4,
+          width = 3,
           class = "control-panel",
-          tags$h4("Step 3: Enter Treatment / Score Info"),
+          tags$h4("Step 2: Record Treatment / Score"),
           uiOutput("dynamic_inputs"),
-          tags$hr(), # <-- ADDED DIVIDING LINE
-          tags$p(
-            class = "instruction-text",
-            tags$b("Repeat"), # <-- MADE BOLD
-            " steps 2 and 3 to annotate all CDAs in the current image. Then, click ",
-            tags$b("\"Next\""),
-            " to proceed to the next image."
-          ),
           tags$hr(),
-          tags$p(
-            class = "instruction-text",
-            "Undo mistakes by clicking ",
-            tags$b("\"Undo Last Box\""),
-            " (removes the last box, shown in ",
-            tags$b("blue"),
-            ")."
-          ),
+
           actionButton("undoButton", "Undo Last Box"),
           tags$hr(),
 
           tags$div(
             id = "download-box",
             tags$h4("Download your Annotations"),
-            downloadButton("download_data", "Download Boxes as CSV")
-          )
+            # Updated button label
+            downloadButton("download_data", "Download Your Boxes")
+          ),
+
+          tags$hr()
         )
       )
     )
