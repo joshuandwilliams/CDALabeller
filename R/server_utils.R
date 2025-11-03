@@ -18,7 +18,21 @@
 handle_image_upload <- function(input, session, image_files, current_index, all_boxes) {
   observeEvent(input$image_upload, {
     req(input$image_upload)
-    shinyjs::disable("image_upload") # Disable file input after
+
+    # Hide Step 1
+    shinyjs::hide(selector = ".step1-container")
+
+    shinyjs::show(selector = "#step2-title")
+    shinyjs::show(selector = "#image-container")
+
+    if (nrow(input$image_upload) > 1) {
+      shinyjs::show(selector = ".image-nav")
+    }
+
+    shinyjs::show(selector = ".control-panel")
+
+    # Disable file input after
+    shinyjs::disable("image_upload")
     session$sendCustomMessage("clear_client_state", list())
 
     image_files(input$image_upload)
@@ -85,6 +99,41 @@ handle_image_navigation <- function(input, image_files, current_index) {
   })
 }
 
+#' Handle conditional visibility of navigation buttons.
+#'
+#' Sets up an observer that shows/hides the 'Next' and 'Previous' buttons
+#' based on the current image index.
+#'
+#' @param image_files A `reactiveVal` holding the uploaded image file data.
+#' @param current_index A `reactiveVal` for the index of the current image.
+#'
+#' @importFrom shiny observe req
+#' @importFrom shinyjs toggle
+#' @noRd
+#' @importFrom shinyjs toggleClass
+handle_nav_button_visibility <- function(image_files, current_index) {
+  observe({
+    files <- image_files()
+    idx <- current_index()
+    req(files) # Ensure files are loaded
+
+    total_files <- nrow(files)
+
+    # Conditionally toggle a class that uses "visibility: hidden".
+    # This keeps the button in the layout, so the text stays centered.
+    # The condition is TRUE when the button should be *hidden*.
+    shinyjs::toggleClass(
+      id = "prev_image",
+      class = "hidden-by-visibility",
+      condition = (idx <= 1)
+    )
+    shinyjs::toggleClass(
+      id = "next_image",
+      class = "hidden-by-visibility",
+      condition = (idx >= total_files)
+    )
+  })
+}
 #' Handle the undo bounding box event.
 #'
 #' Sets up an observer for the 'undo' button. When clicked, it sends a
@@ -200,10 +249,10 @@ render_dynamic_inputs <- function(data_fields, image_files) {
 
     inputs <- list()
     if ("treatment" %in% fields) {
-      inputs <- c(inputs, list(textInput("treatment_input", "Treatment:", placeholder = "Enter treatment for the last box")))
+      inputs <- c(inputs, list(textInput("treatment_input", "Treatment:", placeholder = "e.g. Treatment A")))
     }
     if ("score" %in% fields) {
-      inputs <- c(inputs, list(textInput("score_input", "Score:", placeholder = "Enter score for the last box")))
+      inputs <- c(inputs, list(textInput("score_input", "Score:", placeholder = "e.g. 0-6")))
     }
     tagList(inputs)
   })

@@ -21,7 +21,7 @@ h2 {
 }
 
 .title-container {
-  text-align: center;
+  text-align: left;
 }
 
 .title-container p {
@@ -48,7 +48,7 @@ h4 {
 
 .step1-container .shiny-input-container {
   margin-bottom: 0; /* Remove default bottom margin */
-  flex-grow: 1; /* Allow the input to fill remaining space */
+  flex-grow: 0; /* Allow the input to fill remaining space */
   width: auto; /* Override any default width */
 }
 
@@ -112,15 +112,21 @@ h4 {
   font-size: 1.1rem; /* Larger image counter text */
 }
 
+/* Hides an element but keeps it in the layout, preserving space */
+.hidden-by-visibility {
+  visibility: hidden;
+}
+
 /* --- Right Column: Controls --- */
 .control-panel {
-  padding-left: 85px; /* Increased side margin */
+  padding-left: 20px; /* Increased side margin */
 }
 
 .control-panel h4:first-of-type {
   /* Adds top margin to align "Step 3" with "Step 2" */
   /* This value accounts for the new, larger h4 and file input */
-  margin-top: 115px;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 /* Make all buttons and inputs full width */
@@ -128,7 +134,6 @@ h4 {
 .control-panel .form-control {
   width: 100%;
   box-sizing: border-box; /* Include padding and border in the element's total width and height */
-  margin-bottom: 10px;
   padding: 8px 12px; /* Add padding to make inputs taller */
   white-space: normal; /* Allow button text to wrap */
   word-wrap: break-word; /* Break words if necessary */
@@ -143,11 +148,27 @@ h4 {
   margin-bottom: 5px;
 }
 
+#undoButton,
+#download_data {
+  font-size: 1.4rem; /* Adjust as needed */
+}
+
+#undoButton {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+/* Make dynamic input labels larger */
+label[for='treatment_input'],
+label[for='score_input'] {
+  font-size: 1.3rem; /* You can adjust this value */
+}
+
 .control-panel hr {
-  margin-top: 25px;    /* Adds buffer above the line */
-  margin-bottom: 25px; /* Adds buffer below the line */
+  margin-top: 50px;    /* Adds buffer above the line */
+  margin-bottom: 50px; /* Adds buffer below the line */
   border: 0;
-  border-top: 1px solid #eee;
+  border-top: 2px solid #999;
 }
 
 /* Download box styling */
@@ -155,12 +176,10 @@ h4 {
   border: 2px solid #d9534f;
   border-radius: 5px;
   padding: 15px;
-  margin-top: 30px;
+  margin-top: 15px; /* Matches the button's new margin */
   text-align: center;
 }
 
 #download-box h4 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  word-break: break-word; /* Allow long headings to wrap */
+  display: none;
 }
