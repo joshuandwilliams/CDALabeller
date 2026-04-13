@@ -280,7 +280,7 @@ format_annotations_for_download <- function(boxes_list) {
     if (is.null(boxes) || length(boxes) == 0) return(NULL)
 
     df <- data.frame(
-      image = image_name,
+      img = image_name,
       x1 = sapply(boxes, function(b) b$x1),
       y1 = sapply(boxes, function(b) b$y1),
       x2 = sapply(boxes, function(b) b$x2),
