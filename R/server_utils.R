@@ -1,75 +1,51 @@
-#' Handle new image uploads and reset application state.
+#' Handle image upload.
 #'
-#' Sets up an observer for the file input. When new images are uploaded, it
-#' sends a message to clear the client-side state (e.g., existing canvases)
-#' and resets the server-side reactive values for the file list, current image
-#' index, and stored annotations.
+#' Stores the uploaded files and swaps the upload step for the annotation UI.
+#' The upload step is hidden afterwards, so images are uploaded once per session.
 #'
 #' @param input The Shiny input object from the server function.
-#' @param session The Shiny session object from the server function.
 #' @param image_files A `reactiveVal` to store the uploaded image file data.
-#' @param current_index A `reactiveVal` to store the index of the currently
-#'   viewed image.
-#' @param all_boxes A `reactiveVal` to store all bounding box annotations.
 #'
-#' @importFrom shiny observeEvent req
-#' @importFrom shinyjs disable
+#' @importFrom shiny observeEvent
 #' @noRd
-handle_image_upload <- function(input, session, image_files, current_index, all_boxes) {
+handle_image_upload <- function(input, image_files) {
   observeEvent(input$image_upload, {
-    req(input$image_upload)
-
-    # Hide Step 1
     shinyjs::hide(selector = ".step1-container")
-
     shinyjs::show(selector = "#step2-title")
     shinyjs::show(selector = "#image-container")
-
+    shinyjs::show(selector = ".control-panel")
     if (nrow(input$image_upload) > 1) {
       shinyjs::show(selector = ".image-nav")
     }
-
-    shinyjs::show(selector = ".control-panel")
-
-    # Disable file input after
-    shinyjs::disable("image_upload")
-    session$sendCustomMessage("clear_client_state", list())
-
     image_files(input$image_upload)
-    current_index(1)
-    all_boxes(list())
   })
 }
 
 #' Process and resize an image for app display
 #'
-#' Reads an image from a path, resizes it to fit within max dimensions
-#' while preserving aspect ratio, converts it to JPEG, and saves it to a
-#' temporary file.
+#' Reads an image, scales it to fit within max dimensions while preserving
+#' aspect ratio, and writes it to a temporary JPEG.
 #'
 #' @param filepath The path to the source image file.
-#' @param max_width The maximum width of the output image in pixels.
-#' @param max_height The maximum height of the output image in pixels.
+#' @param max_width,max_height The maximum output dimensions in pixels.
 #'
 #' @return A list containing the path to the processed JPEG (`path`), and the
 #'   original image's dimensions (`original_width`, `original_height`).
 #'
-#' @importFrom magick image_convert image_info image_read image_scale image_write
+#' @importFrom magick image_info image_read image_scale image_write
 #' @noRd
 process_image <- function(filepath, max_width = 1200, max_height = 1200) {
   img <- image_read(filepath)
   info <- image_info(img)
-  img <- image_scale(img, paste0(max_width, "x", max_height, ">")) # Resize while preserving aspect ratio
-  img <- image_convert(img, format = "jpeg") # Convert to JPEG
+  img <- image_scale(img, paste0(max_width, "x", max_height, ">"))
   out_path <- tempfile(fileext = ".jpg")
-  image_write(img, path = out_path, format = "jpeg", quality = 85) # Save to temp file
-  return(list(path = out_path, original_width = info$width, original_height = info$height))
+  image_write(img, path = out_path, format = "jpeg", quality = 85)
+  list(path = out_path, original_width = info$width, original_height = info$height)
 }
 
 #' Handle image navigation events.
 #'
-#' Sets up observers for the 'next' and 'previous' image buttons to update the
-#' current image index, ensuring the index stays within the bounds of the
+#' Moves the current index on 'next' and 'previous', keeping it within the
 #' number of uploaded images.
 #'
 #' @param input The Shiny input object from the server function.
@@ -79,88 +55,39 @@ process_image <- function(filepath, max_width = 1200, max_height = 1200) {
 #' @importFrom shiny observeEvent req
 #' @noRd
 handle_image_navigation <- function(input, image_files, current_index) {
-  # Next image button
   observeEvent(input$next_image, {
     req(image_files())
-    idx <- current_index()
-    # Use nrow() to get the correct number of uploaded files
-    if (idx < nrow(image_files())) {
-      current_index(idx + 1)
-    }
+    if (current_index() < nrow(image_files())) current_index(current_index() + 1)
   })
-
-  # Previous image button
   observeEvent(input$prev_image, {
-    req(image_files())
-    idx <- current_index()
-    if (idx > 1) {
-      current_index(idx - 1)
-    }
+    if (current_index() > 1) current_index(current_index() - 1)
   })
 }
 
-#' Handle conditional visibility of navigation buttons.
+#' Handle visibility of navigation buttons.
 #'
-#' Sets up an observer that shows/hides the 'Next' and 'Previous' buttons
-#' based on the current image index.
+#' Hides 'Previous' on the first image and 'Next' on the last. The class uses
+#' `visibility: hidden`, so the buttons keep their space and the counter stays
+#' centred.
 #'
 #' @param image_files A `reactiveVal` holding the uploaded image file data.
 #' @param current_index A `reactiveVal` for the index of the current image.
 #'
 #' @importFrom shiny observe req
-#' @importFrom shinyjs toggle
 #' @noRd
-#' @importFrom shinyjs toggleClass
 handle_nav_button_visibility <- function(image_files, current_index) {
   observe({
-    files <- image_files()
+    req(image_files())
     idx <- current_index()
-    req(files) # Ensure files are loaded
-
-    total_files <- nrow(files)
-
-    # Conditionally toggle a class that uses "visibility: hidden".
-    # This keeps the button in the layout, so the text stays centered.
-    # The condition is TRUE when the button should be *hidden*.
-    shinyjs::toggleClass(
-      id = "prev_image",
-      class = "hidden-by-visibility",
-      condition = (idx <= 1)
-    )
-    shinyjs::toggleClass(
-      id = "next_image",
-      class = "hidden-by-visibility",
-      condition = (idx >= total_files)
-    )
-  })
-}
-#' Handle the undo bounding box event.
-#'
-#' Sets up an observer for the 'undo' button. When clicked, it sends a
-#' custom message to the client-side JavaScript to remove the last drawn
-#' bounding box for the current image.
-#'
-#' @param input The Shiny input object from the server function.
-#' @param session The Shiny session object from the server function.
-#' @param image_files A `reactiveVal` holding the uploaded image file data.
-#' @param current_index A `reactiveVal` for the index of the current image.
-#'
-#' @importFrom shiny observeEvent
-#' @noRd
-handle_undo <- function(input, session, image_files, current_index) {
-  observeEvent(input$undo_box, {
-    # Assuming image_files() is a data frame like object from fileInput
-    current_file_path <- image_files()$datapath[current_index()]
-    session$sendCustomMessage("undo_last_box", list(filename = base::basename(current_file_path)))
+    shinyjs::toggleClass("prev_image", "hidden-by-visibility", condition = idx <= 1)
+    shinyjs::toggleClass("next_image", "hidden-by-visibility", condition = idx >= nrow(image_files()))
   })
 }
 
 #' Update annotations from client-side data.
 #'
-#' Sets up an observer that listens for incoming bounding box data from the
-#' client (`input$bbox_coords`). When data is received, it updates the main
-#' `all_boxes` reactive list with the new annotations for the corresponding
-#' filename.
+#' Stores the boxes sent by the client (`input$bbox_coords`) under their
+#' image filename in `all_boxes`.
 #'
 #' @param input The Shiny input object from the server function.
 #' @param all_boxes A `reactiveVal` to store all bounding box annotations.
@@ -169,21 +96,13 @@ handle_undo <- function(input, session, image_files, current_index) {
 #' @noRd
 update_annotations <- function(input, all_boxes) {
   observeEvent(input$bbox_coords, {
-    if (!is.null(input$bbox_coords)) {
-      filename <- input$bbox_coords$filename
-      boxes <- input$bbox_coords$boxes
-      current_boxes <- all_boxes()
-      current_boxes[[filename]] <- boxes
-      all_boxes(current_boxes)
-    }
+    boxes <- all_boxes()
+    boxes[[input$bbox_coords$filename]] <- input$bbox_coords$boxes
+    all_boxes(boxes)
   })
 }
 
 #' Render the main output image.
-#'
-#' Creates a `renderImage` object that displays the currently selected and
-#' processed image. The function depends on reactive information about the
-#' current image.
 #'
 #' @param processed_image_info A reactive expression that returns a list
 #'   containing the path to the processed image.
@@ -192,11 +111,10 @@ update_annotations <- function(input, all_boxes) {
 #'
 #' @return A `renderImage` object.
 #'
-#' @importFrom shiny renderImage req
+#' @importFrom shiny renderImage
 #' @noRd
 render_output_image <- function(processed_image_info, current_index) {
   renderImage({
-    req(processed_image_info())
     list(
       src = processed_image_info()$path,
       contentType = "image/jpeg",
@@ -205,111 +123,57 @@ render_output_image <- function(processed_image_info, current_index) {
   }, deleteFile = TRUE)
 }
 
-#' Render the image counter text.
-#'
-#' Creates a `renderText` object that displays the current image count and
-#' filename (e.g., "Image 3 of 5 – my_image.jpg").
+#' Render the image counter text, e.g. "Image 3 of 5 - my_image.tif".
 #'
 #' @param image_files A `reactiveVal` holding the uploaded image file data.
 #' @param current_index A `reactiveVal` for the index of the current image.
 #'
 #' @return A `renderText` object.
 #'
-#' @importFrom shiny renderText
+#' @importFrom shiny renderText req
 #' @noRd
 render_image_counter <- function(image_files, current_index) {
   renderText({
-    files <- image_files()
+    files <- req(image_files())
     idx <- current_index()
-    if (is.null(files) || nrow(files) == 0) {
-      return("No images loaded")
-    }
-    fname <- files$name[idx]
-    paste0("Image ", idx, " of ", nrow(files), " - ", fname)  # Changed to regular hyphen
-  })
-}
-
-#' Render dynamic UI inputs for annotation data.
-#'
-#' Creates a `renderUI` object that generates input fields (e.g., for
-#' 'treatment' or 'score') based on the fields the user selected at startup.
-#'
-#' @param data_fields A `reactiveVal` containing the user-selected field names.
-#' @param image_files A `reactiveVal` used with `req()` to ensure inputs only
-#'   appear after images are loaded.
-#'
-#' @return A `renderUI` object.
-#'
-#' @importFrom shiny renderUI req textInput tagList
-#' @noRd
-render_dynamic_inputs <- function(data_fields, image_files) {
-  renderUI({
-    fields <- data_fields()
-    req(fields, image_files())
-
-    inputs <- list()
-    if ("treatment" %in% fields) {
-      inputs <- c(inputs, list(textInput("treatment_input", "Treatment:", placeholder = "e.g. Treatment A")))
-    }
-    if ("score" %in% fields) {
-      inputs <- c(inputs, list(textInput("score_input", "Score:", placeholder = "e.g. 0-6")))
-    }
-    tagList(inputs)
+    paste0("Image ", idx, " of ", nrow(files), " - ", files$name[idx])
   })
 }
 
 #' Format a list of annotations into a data frame.
 #'
 #' Converts the nested list of bounding boxes, grouped by image name, into a
-#' single, tidy data frame suitable for export to CSV.
+#' single data frame for CSV export. Empty treatment or score values become `NA`.
 #'
 #' @param boxes_list A named list where each name is an image filename and each
 #'   value is a list of bounding box annotations for that image.
 #'
-#' @return A data frame with all annotations, or `NULL` if the input is empty.
+#' @return A data frame with all annotations, or `NULL` if there are none.
 #'
 #' @noRd
 format_annotations_for_download <- function(boxes_list) {
-  if (is.null(boxes_list) || length(boxes_list) == 0) {
-    return(NULL)
-  }
+  na_if_empty <- function(x) if (is.null(x) || x == "") NA else x
 
-  # Convert list of boxes to dataframe
-  all_boxes_df <- do.call(rbind, lapply(names(boxes_list), function(image_name) {
+  do.call(rbind, lapply(names(boxes_list), function(image_name) {
     boxes <- boxes_list[[image_name]]
-    if (is.null(boxes) || length(boxes) == 0) return(NULL)
-
-    df <- data.frame(
+    if (length(boxes) == 0) return(NULL)
+    data.frame(
       img = image_name,
-      x1 = sapply(boxes, function(b) b$x1),
-      y1 = sapply(boxes, function(b) b$y1),
-      x2 = sapply(boxes, function(b) b$x2),
-      y2 = sapply(boxes, function(b) b$y2),
-      stringsAsFactors = FALSE
+      x1 = sapply(boxes, `[[`, "x1"),
+      y1 = sapply(boxes, `[[`, "y1"),
+      x2 = sapply(boxes, `[[`, "x2"),
+      y2 = sapply(boxes, `[[`, "y2"),
+      treatment = sapply(boxes, function(b) na_if_empty(b$treatment)),
+      score = sapply(boxes, function(b) na_if_empty(b$score))
     )
-
-    # Always add treatment and score columns, replacing null or "" with NA
-    df$treatment <- sapply(boxes, function(b) ifelse(is.null(b$treatment) || b$treatment == "", NA, b$treatment))
-    df$score <- sapply(boxes, function(b) ifelse(is.null(b$score) || b$score == "", NA, b$score))
-
-    df
   }))
-
-  if (is.null(all_boxes_df) || nrow(all_boxes_df) == 0) {
-    return(NULL)
-  }
-  all_boxes_df
 }
 
 #' Set up the download handler for annotations.
 #'
-#' Creates the `downloadHandler` object for the download button. It generates
-#' a timestamped filename and uses the `format_annotations_for_download`
-#' function to prepare the data before writing it to a CSV file.
-#'
 #' @param all_boxes A `reactiveVal` containing the list of all annotations.
 #'
-#' @return A `downloadHandler` object.
+#' @return A `downloadHandler` object writing a timestamped CSV.
 #'
 #' @importFrom shiny downloadHandler
 #' @importFrom utils write.csv
@@ -317,20 +181,12 @@ format_annotations_for_download <- function(boxes_list) {
 setup_download_handler <- function(all_boxes) {
   downloadHandler(
     filename = function() {
-      # Check if running under testthat/shinytest2
-      if (identical(Sys.getenv("TESTTHAT"), "true")) {
-        return("bounding_boxes_for_test.csv")
-      } else {
-        timestamp <- base::format(base::Sys.time(), "%Y%m%d_%H%M%S")
-        base::paste0("bounding_boxes_", timestamp, ".csv")
-      }
+      paste0("bounding_boxes_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
     },
     content = function(file) {
-      # Use the pure function to get the data frame
       annotations_df <- format_annotations_for_download(all_boxes())
-
       if (!is.null(annotations_df)) {
-        utils::write.csv(annotations_df, file, row.names = FALSE)
+        write.csv(annotations_df, file, row.names = FALSE)
       }
     }
   )
@@ -338,33 +194,24 @@ setup_download_handler <- function(all_boxes) {
 
 #' Notify client about a new processed image.
 #'
-#' Sets up an observer that triggers whenever the `processed_image_info`
-#' reactive changes. It sends a custom message to the client-side with the
-#' new image's original filename and dimensions, allowing JavaScript to
-#' correctly scale the annotation canvas.
+#' Sends the image's original filename and dimensions so the client can map
+#' canvas coordinates back to original-image pixels.
 #'
 #' @param session The Shiny session object from the server function.
 #' @param processed_image_info A reactive expression that returns metadata for
 #'   the currently processed image.
-#' @param image_files A `reactiveVal` holding the uploaded image file data, used
-#'   to get the original filename.
+#' @param image_files A `reactiveVal` holding the uploaded image file data.
 #' @param current_index A `reactiveVal` for the index of the current image.
 #'
-#' @importFrom shiny observeEvent req
+#' @importFrom shiny observeEvent
 #' @noRd
 notify_client_of_new_image <- function(session, processed_image_info, image_files, current_index) {
   observeEvent(processed_image_info(), {
-    files <- image_files()
-    idx <- current_index()
-    p_info <- processed_image_info()
-    req(p_info, files, idx) # Ensure all reactives are ready
-
-    original_filename <- files$name[idx]
-
+    info <- processed_image_info()
     session$sendCustomMessage("image_loaded", list(
-      filename = original_filename,
-      width = p_info$original_width,
-      height = p_info$original_height
+      filename = image_files()$name[current_index()],
+      width = info$original_width,
+      height = info$original_height
     ))
   })
 }

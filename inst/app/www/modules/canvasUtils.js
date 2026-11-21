@@ -1,47 +1,26 @@
 import appState from './state.js';
 
 /**
- * Redraws the canvas. This function clears the canvas and then draws all the
- * bounding boxes stored in the state for the current image.
+ * Resizes the canvas to the displayed image, which also clears it, then draws
+ * the current image's boxes. The last box is white and thick, the rest blue.
  */
 export function redraw() {
   const image = document.querySelector("#output_image img");
-  if (!image || !appState.canvas) return;
+  if (!image || !appState.canvas || image.naturalWidth === 0) return;
 
-  if (image.naturalWidth === 0 || image.naturalHeight === 0) {
-    return;
-  }
+  appState.canvas.width = image.offsetWidth;
+  appState.canvas.height = image.offsetHeight;
 
-  const displayWidth = image.offsetWidth;
-  const displayHeight = image.offsetHeight;
+  const boxes = appState.drawnBoxesPerImage[appState.currentImage] || [];
+  boxes.forEach((box, index) => {
+    const isLast = index === boxes.length - 1;
+    appState.ctx.strokeStyle = isLast ? "white" : "blue";
+    appState.ctx.lineWidth = isLast ? 4 : 2;
 
-  appState.canvas.width = displayWidth;
-  appState.canvas.height = displayHeight;
-  appState.ctx = appState.canvas.getContext('2d');
-  appState.ctx.clearRect(0, 0, appState.canvas.width, appState.canvas.height);
-
-  appState.ctx.strokeStyle = "white";
-  appState.ctx.lineWidth = 2;
-
-  if (appState.currentImage && appState.drawnBoxesPerImage[appState.currentImage]) {
-    const boxes = appState.drawnBoxesPerImage[appState.currentImage];
-    boxes.forEach((box, index) => {
-      // Set style: white and thick for last box, blue for all others
-      if (index === boxes.length - 1) {
-        appState.ctx.strokeStyle = "white";
-        appState.ctx.lineWidth = 4;
-      } else {
-        appState.ctx.strokeStyle = "blue";
-        appState.ctx.lineWidth = 2;
-      }
-
-      const pixelX = (box.x1 / appState.originalImageWidth) * appState.canvas.width;
-      const pixelY = (box.y1 / appState.originalImageHeight) * appState.canvas.height;
-      const pixelWidth = ((box.x2 - box.x1) / appState.originalImageWidth) * appState.canvas.width;
-      const pixelHeight = ((box.y2 - box.y1) / appState.originalImageHeight) * appState.canvas.height;
-      appState.ctx.strokeRect(pixelX, pixelY, pixelWidth, pixelHeight);
-    });
-  }
+    const scaleX = appState.canvas.width / appState.originalImageWidth;
+    const scaleY = appState.canvas.height / appState.originalImageHeight;
+    appState.ctx.strokeRect(box.x1 * scaleX, box.y1 * scaleY, (box.x2 - box.x1) * scaleX, (box.y2 - box.y1) * scaleY);
+  });
 }
 
 /**
@@ -59,8 +38,7 @@ export function makeSquare(box, imgWidth, imgHeight) {
   const vlen = y2 - y1;
   if (hlen === vlen) return box;
 
-  const diff = Math.abs(hlen - vlen);
-  const halfDiff = diff / 2;
+  const halfDiff = Math.abs(hlen - vlen) / 2;
 
   if (hlen > vlen) {
     y1 -= halfDiff;
@@ -79,9 +57,8 @@ export function makeSquare(box, imgWidth, imgHeight) {
 }
 
 /**
- * Ensures the canvas element is correctly sized to match the displayed image.
- * This is crucial for responsive behavior and accurate coordinate mapping. It
- * also manages the visibility and interactivity of the canvas.
+ * Sizes the canvas to the displayed image once it has rendered, then enables
+ * drawing.
  */
 export function ensureCanvasSize() {
   const image = document.querySelector("#output_image img");
@@ -89,8 +66,6 @@ export function ensureCanvasSize() {
 
   const checkImageSize = () => {
     if (image.offsetWidth > 0 && image.offsetHeight > 0) {
-      appState.canvas.width = image.offsetWidth;
-      appState.canvas.height = image.offsetHeight;
       redraw();
       appState.isReady = true;
       appState.canvas.style.visibility = "visible";
@@ -110,4 +85,16 @@ export function ensureCanvasSize() {
     image.onload = checkImageSize;
     setTimeout(checkImageSize, 50);
   }
+}
+
+/**
+ * Fills the treatment and score inputs with the current image's last box,
+ * or clears them if it has no boxes.
+ */
+export function syncInputsToLastBox() {
+  const boxes = appState.drawnBoxesPerImage[appState.currentImage] || [];
+  const lastBox = boxes[boxes.length - 1];
+  appState.requiredFields.forEach(field => {
+    document.getElementById(field + '_input').value = (lastBox && lastBox[field]) || "";
+  });
 }
