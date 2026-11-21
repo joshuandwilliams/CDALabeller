@@ -32,6 +32,9 @@ test_that("navigation moves between images and stays in range", {
     expect_equal(current_index(), 4)
     info <- processed_image_info()
     expect_equal(c(info$original_width, info$original_height), c(400, 600))
+
+    session$setInputs(prev_image = 2)
+    expect_equal(current_index(), 3)
   })
 })
 
@@ -48,13 +51,40 @@ test_that("process_image writes a downscaled JPEG and keeps original dimensions"
   expect_equal(c(info$original_width, info$original_height), c(2400, 1600))
 })
 
+# Replaces shiny::showNotification() with a recorder; returns the messages shown.
+local_notifications <- function(env = parent.frame()) {
+  shown <- new.env()
+  shown$messages <- character()
+  local_mocked_bindings(
+    showNotification = function(ui, ...) shown$messages <- c(shown$messages, ui),
+    .package = "shiny", .env = env
+  )
+  shown
+}
+
 test_that("uploads with duplicate file names are rejected", {
+  shown <- local_notifications()
   upload_df <- fixture_upload()[c(1, 2), ]
   upload_df$name <- c("same.tif", "same.tif")
 
   testServer(app_server, expr = {
     session$setInputs(image_upload = upload_df)
     expect_null(image_files())
+  })
+  expect_match(shown$messages, "same.tif")
+})
+
+test_that("an invalid score triggers a warning, a valid one does not", {
+  shown <- local_notifications()
+  testServer(app_server, expr = {
+    session$setInputs(image_upload = fixture_upload())
+    box <- list(x1 = 1, y1 = 1, x2 = 5, y2 = 5, score = "3")
+    session$setInputs(bbox_coords = list(filename = "_DSC0024.tif", boxes = list(box)))
+    expect_length(shown$messages, 0)
+
+    box$score <- "9"
+    session$setInputs(bbox_coords = list(filename = "_DSC0024.tif", boxes = list(box)))
+    expect_match(shown$messages, "from 0 to 6")
   })
 })
 
