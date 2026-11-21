@@ -6,7 +6,7 @@
 [![R CMD
 check](https://github.com/joshuandwilliams/CDALabeller/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/CDALabeller/actions/workflows/R-CMD-check.yaml)
 [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-![R](https://img.shields.io/badge/R-%3E=3.5.0-1e90ff?logo=r)
+![R](https://img.shields.io/badge/R-%3E=4.0.0-1e90ff?logo=r)
 ![Shiny](https://img.shields.io/badge/built%20with-Shiny-00B2E1?logo=shiny)
 
 <!-- badges: end -->

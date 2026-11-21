@@ -1,10 +1,19 @@
 Package: CDALabeller
-Title: CDALabeller
-Version: 0.0.0.9000
+Title: Label Cell Death Areas in Agroinfiltration Images
+Version: 0.1.0
 Authors@R: 
     person("Josh", "Williams", , "jowillia@nbi.ac.uk", role = c("aut", "cre"))
-Description: An R Shiny app for labelling cell death areas.
+Description: A 'shiny' app for drawing square bounding boxes around cell
+    death areas in agroinfiltration images, recording a treatment and a 0 to 6
+    lesion score for each box, and exporting the boxes as a CSV file that
+    'AutoCDAScorer' reads. Annotations are autosaved, and each row records the
+    annotator, the time the box was drawn, the image's MD5 checksum and the
+    app version.
+URL: https://github.com/joshuandwilliams/CDALabeller
+BugReports: https://github.com/joshuandwilliams/CDALabeller/issues
 License: MIT + file LICENSE
+Depends: 
+    R (>= 4.0.0)
 Imports: 
     golem,
     magick,
@@ -17,5 +26,6 @@ RoxygenNote: 7.3.3
 Suggests: 
     chromote,
     shinytest2,
-    testthat,
+    testthat (>= 3.0.0),
     withr
+Config/testthat/edition: 3
