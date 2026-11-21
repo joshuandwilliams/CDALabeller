@@ -29,5 +29,6 @@ app_server <- function(input, output, session) {
 
   output$output_image <- render_output_image(processed_image_info, current_index)
   output$image_counter <- render_image_counter(image_files, current_index)
-  output$download_data <- setup_download_handler(all_boxes)
+  annotator <- shiny::reactive(input$annotator_input)
+  output$download_data <- setup_download_handler(all_boxes, image_files, annotator)
 }

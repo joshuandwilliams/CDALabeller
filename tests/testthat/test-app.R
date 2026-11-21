@@ -58,3 +58,27 @@ test_that("a click without a drag records no box", {
   drag(app, 50, 50, 50, 50)
   expect_null(app$get_value(input = "bbox_coords"))
 })
+
+test_that("the downloaded CSV holds the drawn box and its annotations", {
+  app <- start_app()
+  app$set_inputs(annotator_input = "JW")
+  drag(app, 100, 100, 200, 180)
+  app$run_js(
+    "for (const [id, value] of [['treatment_input', 'T1'], ['score_input', '3']]) {
+       const el = document.getElementById(id);
+       el.value = value;
+       el.dispatchEvent(new Event('input', {bubbles: true}));
+     }"
+  )
+  app$wait_for_idle()
+
+  csv <- utils::read.csv(app$get_download("download_data"))
+  expect_equal(names(csv), annotation_columns)
+  expect_equal(nrow(csv), 1)
+  expect_equal(unlist(csv[1, c("x1", "y1", "x2", "y2")]), c(x1 = 200, y1 = 180, x2 = 400, y2 = 380))
+  expect_equal(csv$treatment, "T1")
+  expect_equal(csv$score, 3)
+  expect_equal(csv$annotator, "JW")
+  expect_match(csv$created_at, "^\\d{4}-\\d{2}-\\d{2}T")
+  expect_match(csv$img_md5, "^[0-9a-f]{32}$")
+})

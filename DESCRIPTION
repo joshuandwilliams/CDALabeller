@@ -7,9 +7,11 @@ Description: An R Shiny app for labelling cell death areas.
 License: MIT + file LICENSE
 Imports: 
     golem,
-    shiny,
     magick,
-    shinyjs
+    shiny,
+    shinyjs,
+    tools,
+    utils
 Encoding: UTF-8
 RoxygenNote: 7.3.3
 Suggests: 

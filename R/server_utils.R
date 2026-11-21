@@ -1,7 +1,9 @@
 #' Handle image upload.
 #'
-#' Stores the uploaded files and swaps the upload step for the annotation UI.
-#' The upload step is hidden afterwards, so images are uploaded once per session.
+#' Stores the uploaded files, with each file's MD5 checksum for provenance, and
+#' swaps the upload step for the annotation UI. The upload step is hidden
+#' afterwards, so images are uploaded once per session. Files with duplicate
+#' names are rejected, because annotations are keyed by file name.
 #'
 #' @param input The Shiny input object from the server function.
 #' @param image_files A `reactiveVal` to store the uploaded image file data.
@@ -9,14 +11,28 @@
 #' @noRd
 handle_image_upload <- function(input, image_files) {
   shiny::observeEvent(input$image_upload, {
+    files <- input$image_upload
+    duplicated_names <- unique(files$name[duplicated(files$name)])
+    if (length(duplicated_names) > 0) {
+      shiny::showNotification(
+        paste0(
+          "These file names appear more than once: ", paste(duplicated_names, collapse = ", "),
+          ". Rename them and upload again."
+        ),
+        type = "error", duration = NULL
+      )
+      return()
+    }
+
     shinyjs::hide(selector = ".step1-container")
     shinyjs::show(selector = "#step2-title")
     shinyjs::show(selector = "#image-container")
     shinyjs::show(selector = ".control-panel")
-    if (nrow(input$image_upload) > 1) {
+    if (nrow(files) > 1) {
       shinyjs::show(selector = ".image-nav")
     }
-    image_files(input$image_upload)
+    files$md5 <- unname(tools::md5sum(files$datapath))
+    image_files(files)
   })
 }
 
@@ -83,7 +99,8 @@ handle_nav_button_visibility <- function(image_files, current_index) {
 #' Update annotations from client-side data.
 #'
 #' Stores the boxes sent by the client (`input$bbox_coords`) under their
-#' image filename in `all_boxes`.
+#' image filename in `all_boxes`. Warns if a score is not valid; such scores
+#' are exported as `NA` (see [parse_score()]).
 #'
 #' @param input The Shiny input object from the server function.
 #' @param all_boxes A `reactiveVal` to store all bounding box annotations.
@@ -91,8 +108,16 @@ handle_nav_button_visibility <- function(image_files, current_index) {
 #' @noRd
 update_annotations <- function(input, all_boxes) {
   shiny::observeEvent(input$bbox_coords, {
+    new_boxes <- input$bbox_coords$boxes
+    scores <- vapply(new_boxes, function(b) if (is.null(b$score)) "" else as.character(b$score), character(1))
+    if (any(scores != "" & is.na(vapply(scores, parse_score, numeric(1))))) {
+      shiny::showNotification(
+        paste0("Scores must be numbers from 0 to ", max_score, ". Invalid scores are exported as NA."),
+        type = "warning", id = "invalid-score"
+      )
+    }
     boxes <- all_boxes()
-    boxes[[input$bbox_coords$filename]] <- input$bbox_coords$boxes
+    boxes[[input$bbox_coords$filename]] <- new_boxes
     all_boxes(boxes)
   })
 }
@@ -136,54 +161,90 @@ render_image_counter <- function(image_files, current_index) {
   })
 }
 
-#' Format a list of annotations into a data frame.
+#' Highest score on the lesion score key.
+#' @noRd
+max_score <- 6
+
+#' Columns of the exported CSV, in order.
 #'
-#' Converts the nested list of bounding boxes, grouped by image name, into a
-#' single data frame for CSV export. Empty treatment or score values become `NA`.
+#' AutoCDAScorer requires `img`, `x1`, `x2`, `y1` and `y2`
+#' (`load_cdascorer_dataframe()`) and ignores the rest.
+#' @noRd
+annotation_columns <- c(
+  "img", "x1", "y1", "x2", "y2", "treatment", "score",
+  "annotator", "created_at", "img_md5", "labeller_version"
+)
+
+#' Parse a score entered in the app.
+#'
+#' @param x A score as text, as sent by the client.
+#' @return The score as a number, or `NA` if it is empty, not a number, or
+#'   outside 0 to `max_score`.
+#' @noRd
+parse_score <- function(x) {
+  score <- suppressWarnings(as.numeric(x))
+  if (length(score) != 1 || is.na(score) || score < 0 || score > max_score) NA_real_ else score
+}
+
+#' Format annotations as the export data frame.
 #'
 #' @param boxes_list A named list where each name is an image filename and each
 #'   value is a list of bounding box annotations for that image.
+#' @param image_files The uploaded image data frame, with an `md5` column.
+#' @param annotator The annotator's name, as entered in the app.
 #'
-#' @return A data frame with all annotations, or `NULL` if there are none.
+#' @return A data frame with the columns in `annotation_columns`, one row per
+#'   box. It has zero rows if there are no boxes.
 #'
 #' @noRd
-format_annotations <- function(boxes_list) {
-  na_if_empty <- function(x) if (is.null(x) || x == "") NA else x
-
-  do.call(rbind, lapply(names(boxes_list), function(image_name) {
+format_annotations <- function(boxes_list, image_files, annotator) {
+  text_or_na <- function(x) if (is.null(x) || x == "") NA_character_ else x
+  rows <- lapply(names(boxes_list), function(image_name) {
     boxes <- boxes_list[[image_name]]
     if (length(boxes) == 0) {
       return(NULL)
     }
     data.frame(
       img = image_name,
-      x1 = sapply(boxes, `[[`, "x1"),
-      y1 = sapply(boxes, `[[`, "y1"),
-      x2 = sapply(boxes, `[[`, "x2"),
-      y2 = sapply(boxes, `[[`, "y2"),
-      treatment = sapply(boxes, function(b) na_if_empty(b$treatment)),
-      score = sapply(boxes, function(b) na_if_empty(b$score))
+      x1 = vapply(boxes, function(b) as.integer(b$x1), integer(1)),
+      y1 = vapply(boxes, function(b) as.integer(b$y1), integer(1)),
+      x2 = vapply(boxes, function(b) as.integer(b$x2), integer(1)),
+      y2 = vapply(boxes, function(b) as.integer(b$y2), integer(1)),
+      treatment = vapply(boxes, function(b) text_or_na(b$treatment), character(1)),
+      score = vapply(boxes, function(b) parse_score(b$score), numeric(1)),
+      created_at = vapply(boxes, function(b) text_or_na(b$created_at), character(1)),
+      img_md5 = image_files$md5[match(image_name, image_files$name)]
     )
-  }))
+  })
+  df <- do.call(rbind, rows)
+  if (is.null(df)) {
+    empty <- data.frame(matrix(nrow = 0, ncol = length(annotation_columns)))
+    names(empty) <- annotation_columns
+    return(empty)
+  }
+  df$annotator <- text_or_na(annotator)
+  df$labeller_version <- as.character(utils::packageVersion("CDALabeller"))
+  df[, annotation_columns]
 }
 
 #' Set up the download handler for annotations.
 #'
 #' @param all_boxes A `reactiveVal` containing the list of all annotations.
+#' @param image_files A `reactiveVal` holding the uploaded image file data.
+#' @param annotator A reactive returning the annotator's name.
 #'
-#' @return A `downloadHandler` object writing a timestamped CSV.
+#' @return A `downloadHandler` object writing a timestamped CSV. With no boxes,
+#'   the CSV has only the header row.
 #'
 #' @noRd
-setup_download_handler <- function(all_boxes) {
+setup_download_handler <- function(all_boxes, image_files, annotator) {
   shiny::downloadHandler(
     filename = function() {
       paste0("bounding_boxes_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
     },
     content = function(file) {
-      annotations_df <- format_annotations(all_boxes())
-      if (!is.null(annotations_df)) {
-        utils::write.csv(annotations_df, file, row.names = FALSE)
-      }
+      df <- format_annotations(all_boxes(), image_files(), annotator())
+      utils::write.csv(df, file, row.names = FALSE)
     }
   )
 }

@@ -43,7 +43,7 @@ export function setupEventListeners() {
     }
 
     const boxes = appState.drawnBoxesPerImage[appState.currentImage] ??= [];
-    boxes.push(makeSquare(newBox, imgWidth, imgHeight));
+    boxes.push({ ...makeSquare(newBox, imgWidth, imgHeight), created_at: new Date().toISOString() });
     redraw();
     syncInputsToLastBox();
     document.getElementById(appState.requiredFields[0] + '_input').focus();
@@ -76,7 +76,8 @@ export function setupEventListeners() {
     sendAnnotationsToShiny();
   });
 
-  // Copy input values onto the last box. Scores outside 0-6 are flagged as errors.
+  // Copy input values onto the last box. Scores outside 0-6 are flagged as errors
+  // here and exported as NA by the server (parse_score in R/server_utils.R).
   function updateLastBoxField(field, value) {
     const boxes = appState.drawnBoxesPerImage[appState.currentImage];
     if (boxes && boxes.length > 0) {

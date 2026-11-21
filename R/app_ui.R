@@ -50,6 +50,7 @@ app_ui <- function(request) {
           width = 3,
           class = "control-panel",
           shiny::tags$h4("Step 2: Record Treatment / Score"),
+          shiny::textInput("annotator_input", "Annotator:", placeholder = "Your name or initials"),
           shiny::textInput("treatment_input", "Treatment:", placeholder = "e.g. Treatment A"),
           shiny::textInput("score_input", "Score:", placeholder = "e.g. 0-6"),
           shiny::tags$hr(),
