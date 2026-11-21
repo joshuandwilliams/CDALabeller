@@ -1,4 +1,5 @@
 import appState from './state.js';
+import { isValidScore } from './annotationUtils.js';
 
 /**
  * Resizes the canvas to the displayed image, which also clears it, then draws
@@ -21,39 +22,6 @@ export function redraw() {
     const scaleY = appState.canvas.height / appState.originalImageHeight;
     appState.ctx.strokeRect(box.x1 * scaleX, box.y1 * scaleY, (box.x2 - box.x1) * scaleX, (box.y2 - box.y1) * scaleY);
   });
-}
-
-/**
- * Converts a rectangular box into a square, expanding from its center.
- * It includes boundary checks to ensure the square does not go outside
- * the original image dimensions.
- * @param {object} box - The box to be squared {x1, y1, x2, y2}.
- * @param {number} imgWidth - The original width of the image.
- * @param {number} imgHeight - The original height of the image.
- * @returns {object} The new, squared box coordinates.
- */
-export function makeSquare(box, imgWidth, imgHeight) {
-  let { x1, y1, x2, y2 } = box;
-  const hlen = x2 - x1;
-  const vlen = y2 - y1;
-  if (hlen === vlen) return box;
-
-  const halfDiff = Math.abs(hlen - vlen) / 2;
-
-  if (hlen > vlen) {
-    y1 -= halfDiff;
-    y2 += halfDiff;
-  } else {
-    x1 -= halfDiff;
-    x2 += halfDiff;
-  }
-
-  if (x1 < 0) { const shift = -x1; x1 += shift; x2 += shift; }
-  if (x2 > imgWidth) { const shift = x2 - imgWidth; x1 -= shift; x2 -= shift; }
-  if (y1 < 0) { const shift = -y1; y1 += shift; y2 += shift; }
-  if (y2 > imgHeight) { const shift = y2 - imgHeight; y1 -= shift; y2 -= shift; }
-
-  return { x1: Math.round(x1), y1: Math.round(y1), x2: Math.round(x2), y2: Math.round(y2) };
 }
 
 /**
@@ -90,7 +58,7 @@ export function ensureCanvasSize() {
 
 /**
  * Fills the treatment and score inputs with the current image's last box,
- * or clears them if it has no boxes.
+ * or clears them if it has no boxes, and updates the score's error state.
  */
 export function syncInputsToLastBox() {
   const boxes = appState.drawnBoxesPerImage[appState.currentImage] || [];
@@ -98,4 +66,6 @@ export function syncInputsToLastBox() {
   appState.requiredFields.forEach(field => {
     document.getElementById(field + '_input').value = (lastBox && lastBox[field]) || "";
   });
+  const scoreInput = document.getElementById('score_input');
+  scoreInput.closest('.form-group').classList.toggle('has-error', !isValidScore(scoreInput.value));
 }

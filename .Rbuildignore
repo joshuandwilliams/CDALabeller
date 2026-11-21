@@ -7,3 +7,5 @@
 ^\.lintr$
 ^\.pre-commit-config\.yaml$
 ^\.pre-commit-hooks$
+^package\.json$
+^tests/js$

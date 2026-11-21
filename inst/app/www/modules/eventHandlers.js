@@ -1,5 +1,6 @@
 import appState from './state.js';
-import { redraw, makeSquare, ensureCanvasSize, syncInputsToLastBox } from './canvasUtils.js';
+import { redraw, ensureCanvasSize, syncInputsToLastBox } from './canvasUtils.js';
+import { canvasToImageBox, makeSquare, isBoxTooLarge, isEmptyBox, sanitizeScore, isValidScore } from './annotationUtils.js';
 import { sendAnnotationsToShiny } from './shinyHandlers.js';
 
 /**
@@ -22,25 +23,27 @@ export function setupEventListeners() {
   function handleMouseUp(e) {
     if (!appState.isReady || !appState.isDrawing) return;
     appState.isDrawing = false;
-    const scaleX = appState.originalImageWidth / appState.canvas.width;
-    const scaleY = appState.originalImageHeight / appState.canvas.height;
+    const imgWidth = appState.originalImageWidth;
+    const imgHeight = appState.originalImageHeight;
+    const newBox = canvasToImageBox(
+      { x: appState.startX, y: appState.startY },
+      { x: e.offsetX, y: e.offsetY },
+      { width: appState.canvas.width, height: appState.canvas.height },
+      { width: imgWidth, height: imgHeight }
+    );
 
-    const newBox = {
-      x1: Math.round(Math.min(appState.startX, e.offsetX) * scaleX),
-      y1: Math.round(Math.min(appState.startY, e.offsetY) * scaleY),
-      x2: Math.round(Math.max(appState.startX, e.offsetX) * scaleX),
-      y2: Math.round(Math.max(appState.startY, e.offsetY) * scaleY),
-    };
-
-    const shortestSide = Math.min(appState.originalImageWidth, appState.originalImageHeight);
-    if (newBox.x2 - newBox.x1 > shortestSide || newBox.y2 - newBox.y1 > shortestSide) {
-      alert(`The box you drew is too large. The maximum size for any side is ${Math.round(shortestSide)} pixels (the shortest side of this image).`);
+    if (isEmptyBox(newBox)) {
+      redraw();
+      return;
+    }
+    if (isBoxTooLarge(newBox, imgWidth, imgHeight)) {
+      alert(`The box you drew is too large. The maximum size for any side is ${Math.min(imgWidth, imgHeight)} pixels (the shortest side of this image).`);
       redraw();
       return;
     }
 
     const boxes = appState.drawnBoxesPerImage[appState.currentImage] ??= [];
-    boxes.push(makeSquare(newBox, appState.originalImageWidth, appState.originalImageHeight));
+    boxes.push(makeSquare(newBox, imgWidth, imgHeight));
     redraw();
     syncInputsToLastBox();
     document.getElementById(appState.requiredFields[0] + '_input').focus();
@@ -73,7 +76,7 @@ export function setupEventListeners() {
     sendAnnotationsToShiny();
   });
 
-  // Copy input values onto the last box. Score is limited to digits and one '.'
+  // Copy input values onto the last box. Scores outside 0-6 are flagged as errors.
   function updateLastBoxField(field, value) {
     const boxes = appState.drawnBoxesPerImage[appState.currentImage];
     if (boxes && boxes.length > 0) {
@@ -85,7 +88,8 @@ export function setupEventListeners() {
     if (e.target.id === 'treatment_input') {
       updateLastBoxField('treatment', e.target.value);
     } else if (e.target.id === 'score_input') {
-      e.target.value = e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+      e.target.value = sanitizeScore(e.target.value);
+      e.target.closest('.form-group').classList.toggle('has-error', !isValidScore(e.target.value));
       updateLastBoxField('score', e.target.value);
     }
   });
