@@ -4,7 +4,7 @@
 <!-- badges: start -->
 
 [![R CMD
-check](https://github.com/%5BYOUR_USERNAME%5D/%5BYOUR_REPO%5D/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/%5BYOUR_USERNAME%5D/%5BYOUR_REPO%5D/actions/workflows/R-CMD-check.yaml)
+check](https://github.com/joshuandwilliams/CDALabeller/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/CDALabeller/actions/workflows/R-CMD-check.yaml)
 [![codecov](https://codecov.io/gh/%5BYOUR_USERNAME%5D/%5BYOUR_REPO%5D/graph/badge.svg)](https://codecov.io/gh/%5BYOUR_USERNAME%5D/%5BYOUR_REPO%5D)
 [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 ![R](https://img.shields.io/badge/R-%3E=3.5.0-1e90ff?logo=r)

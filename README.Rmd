@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 
-[![R CMD check](https://github.com/[YOUR_USERNAME]/[YOUR_REPO]/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/[YOUR_USERNAME]/[YOUR_REPO]/actions/workflows/R-CMD-check.yaml)
+[![R CMD check](https://github.com/joshuandwilliams/CDALabeller/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/CDALabeller/actions/workflows/R-CMD-check.yaml)
 [![codecov](https://codecov.io/gh/[YOUR_USERNAME]/[YOUR_REPO]/graph/badge.svg)](https://codecov.io/gh/[YOUR_USERNAME]/[YOUR_REPO])
 [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 ![R](https://img.shields.io/badge/R-%3E=3.5.0-1e90ff?logo=r)
