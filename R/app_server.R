@@ -2,14 +2,13 @@
 #'
 #' @param input,output,session Internal parameters for \{shiny\}.
 #'
-#' @importFrom shiny reactive reactiveVal req stopApp
 #' @export
 app_server <- function(input, output, session) {
-  session$onSessionEnded(stopApp)
+  session$onSessionEnded(shiny::stopApp)
 
-  image_files   <- reactiveVal(NULL)    # Data frame of uploaded image files
-  current_index <- reactiveVal(1)       # Index of the current image
-  all_boxes     <- reactiveVal(list())  # Annotations, keyed by image filename
+  image_files <- shiny::reactiveVal(NULL) # Data frame of uploaded image files
+  current_index <- shiny::reactiveVal(1) # Index of the current image
+  all_boxes <- shiny::reactiveVal(list()) # Annotations, keyed by image filename
 
   # Hidden until images are uploaded
   shinyjs::hide(selector = "#step2-title")
@@ -17,8 +16,8 @@ app_server <- function(input, output, session) {
   shinyjs::hide(selector = ".image-nav")
   shinyjs::hide(selector = ".control-panel")
 
-  processed_image_info <- reactive({
-    req(image_files())
+  processed_image_info <- shiny::reactive({
+    shiny::req(image_files())
     process_image(image_files()$datapath[current_index()])
   })
 
@@ -28,7 +27,7 @@ app_server <- function(input, output, session) {
   update_annotations(input, all_boxes)
   notify_client_of_new_image(session, processed_image_info, image_files, current_index)
 
-  output$output_image  <- render_output_image(processed_image_info, current_index)
+  output$output_image <- render_output_image(processed_image_info, current_index)
   output$image_counter <- render_image_counter(image_files, current_index)
   output$download_data <- setup_download_handler(all_boxes)
 }

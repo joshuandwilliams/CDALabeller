@@ -2,29 +2,27 @@
 #'
 #' @param request Internal parameter for \{shiny\}.
 #'
-#' @importFrom shiny tagList fluidPage h2 tags imageOutput fluidRow column actionButton textOutput span fileInput textInput downloadButton
 #' @export
 app_ui <- function(request) {
-  tagList(
+  shiny::tagList(
     golem_add_external_resources(),
     shinyjs::useShinyjs(),
-    fluidPage(
-      tags$div(
+    shiny::fluidPage(
+      shiny::tags$div(
         class = "title-container",
-        h2("CDALabeller"),
-        tags$p("Draw bounding box annotations around cell death areas")
+        shiny::h2("CDALabeller"),
+        shiny::tags$p("Draw bounding box annotations around cell death areas")
       ),
-
-      fluidRow(
+      shiny::fluidRow(
         class = "main-container",
 
         # Left column: upload, image and navigation
-        column(
+        shiny::column(
           width = 9,
-          tags$div(
+          shiny::tags$div(
             class = "step1-container",
-            tags$h4("Upload Your Agroinfiltration Images"),
-            fileInput(
+            shiny::tags$h4("Upload Your Agroinfiltration Images"),
+            shiny::fileInput(
               "image_upload",
               label = NULL,
               multiple = TRUE,
@@ -32,35 +30,34 @@ app_ui <- function(request) {
               placeholder = "No files selected"
             )
           ),
-
-          tags$h4(id = "step2-title", "Step 1: Draw a Bounding Box (Click and Drag)"),
-          tags$div(
+          shiny::tags$h4(id = "step2-title", "Step 1: Draw a Bounding Box (Click and Drag)"),
+          shiny::tags$div(
             id = "image-container",
-            imageOutput("output_image", height = "auto"),
-            tags$canvas(id = "myCanvas"),
-            tags$img(id = "score-key", src = "www/lesion_score_key.jpg", alt = "Lesion score key, 0 to 6")
+            shiny::imageOutput("output_image", height = "auto"),
+            shiny::tags$canvas(id = "myCanvas"),
+            shiny::tags$img(id = "score-key", src = "www/lesion_score_key.jpg", alt = "Lesion score key, 0 to 6")
           ),
-          tags$div(
+          shiny::tags$div(
             class = "image-nav",
-            actionButton("prev_image", "Previous"),
-            textOutput("image_counter", container = span),
-            actionButton("next_image", "Next")
+            shiny::actionButton("prev_image", "Previous"),
+            shiny::textOutput("image_counter", container = shiny::span),
+            shiny::actionButton("next_image", "Next")
           )
         ),
 
         # Right column: annotation fields and export
-        column(
+        shiny::column(
           width = 3,
           class = "control-panel",
-          tags$h4("Step 2: Record Treatment / Score"),
-          textInput("treatment_input", "Treatment:", placeholder = "e.g. Treatment A"),
-          textInput("score_input", "Score:", placeholder = "e.g. 0-6"),
-          tags$hr(),
-          actionButton("undoButton", "Undo Last Box"),
-          tags$hr(),
-          tags$div(
+          shiny::tags$h4("Step 2: Record Treatment / Score"),
+          shiny::textInput("treatment_input", "Treatment:", placeholder = "e.g. Treatment A"),
+          shiny::textInput("score_input", "Score:", placeholder = "e.g. 0-6"),
+          shiny::tags$hr(),
+          shiny::actionButton("undoButton", "Undo Last Box"),
+          shiny::tags$hr(),
+          shiny::tags$div(
             id = "download-box",
-            downloadButton("download_data", "Download Your Boxes")
+            shiny::downloadButton("download_data", "Download Your Boxes")
           )
         )
       )
@@ -70,15 +67,13 @@ app_ui <- function(request) {
 
 #' Add external Resources to the Application
 #'
-#' @importFrom golem add_resource_path favicon
-#' @importFrom shiny tags
 #' @noRd
 golem_add_external_resources <- function() {
-  add_resource_path("www", app_sys("app/www"))
-  tags$head(
-    favicon(),
-    tags$title("CDALabeller"),
-    tags$link(rel = "stylesheet", type = "text/css", href = "www/styles.css"),
-    tags$script(type = "module", src = "www/script.js")
+  golem::add_resource_path("www", app_sys("app/www"))
+  shiny::tags$head(
+    golem::favicon(),
+    shiny::tags$title("CDALabeller"),
+    shiny::tags$link(rel = "stylesheet", type = "text/css", href = "www/styles.css"),
+    shiny::tags$script(type = "module", src = "www/script.js")
   )
 }

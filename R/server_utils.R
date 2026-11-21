@@ -6,10 +6,9 @@
 #' @param input The Shiny input object from the server function.
 #' @param image_files A `reactiveVal` to store the uploaded image file data.
 #'
-#' @importFrom shiny observeEvent
 #' @noRd
 handle_image_upload <- function(input, image_files) {
-  observeEvent(input$image_upload, {
+  shiny::observeEvent(input$image_upload, {
     shinyjs::hide(selector = ".step1-container")
     shinyjs::show(selector = "#step2-title")
     shinyjs::show(selector = "#image-container")
@@ -32,14 +31,13 @@ handle_image_upload <- function(input, image_files) {
 #' @return A list containing the path to the processed JPEG (`path`), and the
 #'   original image's dimensions (`original_width`, `original_height`).
 #'
-#' @importFrom magick image_info image_read image_scale image_write
 #' @noRd
 process_image <- function(filepath, max_width = 1200, max_height = 1200) {
-  img <- image_read(filepath)
-  info <- image_info(img)
-  img <- image_scale(img, paste0(max_width, "x", max_height, ">"))
+  img <- magick::image_read(filepath)
+  info <- magick::image_info(img)
+  img <- magick::image_scale(img, paste0(max_width, "x", max_height, ">"))
   out_path <- tempfile(fileext = ".jpg")
-  image_write(img, path = out_path, format = "jpeg", quality = 85)
+  magick::image_write(img, path = out_path, format = "jpeg", quality = 85)
   list(path = out_path, original_width = info$width, original_height = info$height)
 }
 
@@ -52,14 +50,13 @@ process_image <- function(filepath, max_width = 1200, max_height = 1200) {
 #' @param image_files A `reactiveVal` holding the uploaded image file data.
 #' @param current_index A `reactiveVal` for the index of the current image.
 #'
-#' @importFrom shiny observeEvent req
 #' @noRd
 handle_image_navigation <- function(input, image_files, current_index) {
-  observeEvent(input$next_image, {
-    req(image_files())
+  shiny::observeEvent(input$next_image, {
+    shiny::req(image_files())
     if (current_index() < nrow(image_files())) current_index(current_index() + 1)
   })
-  observeEvent(input$prev_image, {
+  shiny::observeEvent(input$prev_image, {
     if (current_index() > 1) current_index(current_index() - 1)
   })
 }
@@ -73,11 +70,10 @@ handle_image_navigation <- function(input, image_files, current_index) {
 #' @param image_files A `reactiveVal` holding the uploaded image file data.
 #' @param current_index A `reactiveVal` for the index of the current image.
 #'
-#' @importFrom shiny observe req
 #' @noRd
 handle_nav_button_visibility <- function(image_files, current_index) {
-  observe({
-    req(image_files())
+  shiny::observe({
+    shiny::req(image_files())
     idx <- current_index()
     shinyjs::toggleClass("prev_image", "hidden-by-visibility", condition = idx <= 1)
     shinyjs::toggleClass("next_image", "hidden-by-visibility", condition = idx >= nrow(image_files()))
@@ -92,10 +88,9 @@ handle_nav_button_visibility <- function(image_files, current_index) {
 #' @param input The Shiny input object from the server function.
 #' @param all_boxes A `reactiveVal` to store all bounding box annotations.
 #'
-#' @importFrom shiny observeEvent
 #' @noRd
 update_annotations <- function(input, all_boxes) {
-  observeEvent(input$bbox_coords, {
+  shiny::observeEvent(input$bbox_coords, {
     boxes <- all_boxes()
     boxes[[input$bbox_coords$filename]] <- input$bbox_coords$boxes
     all_boxes(boxes)
@@ -111,16 +106,18 @@ update_annotations <- function(input, all_boxes) {
 #'
 #' @return A `renderImage` object.
 #'
-#' @importFrom shiny renderImage
 #' @noRd
 render_output_image <- function(processed_image_info, current_index) {
-  renderImage({
-    list(
-      src = processed_image_info()$path,
-      contentType = "image/jpeg",
-      alt = paste("Image", current_index())
-    )
-  }, deleteFile = TRUE)
+  shiny::renderImage(
+    {
+      list(
+        src = processed_image_info()$path,
+        contentType = "image/jpeg",
+        alt = paste("Image", current_index())
+      )
+    },
+    deleteFile = TRUE
+  )
 }
 
 #' Render the image counter text, e.g. "Image 3 of 5 - my_image.tif".
@@ -130,11 +127,10 @@ render_output_image <- function(processed_image_info, current_index) {
 #'
 #' @return A `renderText` object.
 #'
-#' @importFrom shiny renderText req
 #' @noRd
 render_image_counter <- function(image_files, current_index) {
-  renderText({
-    files <- req(image_files())
+  shiny::renderText({
+    files <- shiny::req(image_files())
     idx <- current_index()
     paste0("Image ", idx, " of ", nrow(files), " - ", files$name[idx])
   })
@@ -151,12 +147,14 @@ render_image_counter <- function(image_files, current_index) {
 #' @return A data frame with all annotations, or `NULL` if there are none.
 #'
 #' @noRd
-format_annotations_for_download <- function(boxes_list) {
+format_annotations <- function(boxes_list) {
   na_if_empty <- function(x) if (is.null(x) || x == "") NA else x
 
   do.call(rbind, lapply(names(boxes_list), function(image_name) {
     boxes <- boxes_list[[image_name]]
-    if (length(boxes) == 0) return(NULL)
+    if (length(boxes) == 0) {
+      return(NULL)
+    }
     data.frame(
       img = image_name,
       x1 = sapply(boxes, `[[`, "x1"),
@@ -175,18 +173,16 @@ format_annotations_for_download <- function(boxes_list) {
 #'
 #' @return A `downloadHandler` object writing a timestamped CSV.
 #'
-#' @importFrom shiny downloadHandler
-#' @importFrom utils write.csv
 #' @noRd
 setup_download_handler <- function(all_boxes) {
-  downloadHandler(
+  shiny::downloadHandler(
     filename = function() {
       paste0("bounding_boxes_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
     },
     content = function(file) {
-      annotations_df <- format_annotations_for_download(all_boxes())
+      annotations_df <- format_annotations(all_boxes())
       if (!is.null(annotations_df)) {
-        write.csv(annotations_df, file, row.names = FALSE)
+        utils::write.csv(annotations_df, file, row.names = FALSE)
       }
     }
   )
@@ -203,10 +199,9 @@ setup_download_handler <- function(all_boxes) {
 #' @param image_files A `reactiveVal` holding the uploaded image file data.
 #' @param current_index A `reactiveVal` for the index of the current image.
 #'
-#' @importFrom shiny observeEvent
 #' @noRd
 notify_client_of_new_image <- function(session, processed_image_info, image_files, current_index) {
-  observeEvent(processed_image_info(), {
+  shiny::observeEvent(processed_image_info(), {
     info <- processed_image_info()
     session$sendCustomMessage("image_loaded", list(
       filename = image_files()$name[current_index()],

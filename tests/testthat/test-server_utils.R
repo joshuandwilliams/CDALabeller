@@ -56,11 +56,11 @@ test_that("annotations are formatted with empty fields as NA", {
     b.tif = list()
   )
 
-  df <- format_annotations_for_download(boxes)
+  df <- format_annotations(boxes)
 
   expect_equal(names(df), c("img", "x1", "y1", "x2", "y2", "treatment", "score"))
   expect_equal(df$img, c("a.tif", "a.tif"))
   expect_equal(df$treatment, c("T1", NA))
   expect_equal(df$score, c("2", NA))
-  expect_null(format_annotations_for_download(list()))
+  expect_null(format_annotations(list()))
 })
