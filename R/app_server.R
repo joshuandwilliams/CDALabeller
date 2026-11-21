@@ -31,4 +31,8 @@ app_server <- function(input, output, session) {
   output$image_counter <- render_image_counter(image_files, current_index)
   annotator <- shiny::reactive(input$annotator_input)
   output$download_data <- setup_download_handler(all_boxes, image_files, annotator)
+
+  autosave_path <- file.path(autosave_dir(), paste0("autosave_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv"))
+  setup_autosave(autosave_path, all_boxes, image_files, annotator)
+  output$autosave_path <- shiny::renderText(autosave_path)
 }

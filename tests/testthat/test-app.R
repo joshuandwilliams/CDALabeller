@@ -9,8 +9,16 @@ skip_if(is.null(tryCatch(chromote::find_chrome(), error = function(e) NULL)), "C
 start_app <- function(env = parent.frame()) {
   path <- withr::local_tempfile(fileext = ".tif", .local_envir = env)
   magick::image_write(magick::image_blank(2400, 1600, "grey"), path, format = "tiff")
-  app <- shinytest2::AppDriver$new(run_app(), width = 1800, height = 1400, load_timeout = 30000)
+  # run_app(autosave_dir =) does not reach AppDriver's child process, so the
+  # autosave directory is set through an R option there instead.
+  autosave <- withr::local_tempdir(.local_envir = env)
+  app <- shinytest2::AppDriver$new(
+    run_app(),
+    width = 1800, height = 1400, load_timeout = 30000,
+    options = list(CDALabeller.autosave_dir = autosave)
+  )
   withr::defer(app$stop(), envir = env)
+  stopifnot(startsWith(app$get_text("#autosave_path"), autosave))
   app$upload_file(image_upload = path)
   app$wait_for_js("window.document.getElementById('myCanvas').style.visibility === 'visible'")
   app

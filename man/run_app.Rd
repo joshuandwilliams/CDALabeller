@@ -34,7 +34,9 @@ request. Note that the entire request path must match the regular
 expression in order for the match to be considered successful.}
 
 \item{...}{arguments to pass to golem_opts.
-See `?golem::get_golem_options` for more details.}
+See `?golem::get_golem_options` for more details. `autosave_dir` sets the
+directory for autosaved annotations; the default is
+`tools::R_user_dir("CDALabeller", "data")`.}
 }
 \description{
 Run the Shiny Application

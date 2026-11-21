@@ -1,7 +1,9 @@
 #' Run the Shiny Application
 #'
 #' @param ... arguments to pass to golem_opts.
-#' See `?golem::get_golem_options` for more details.
+#' See `?golem::get_golem_options` for more details. `autosave_dir` sets the
+#' directory for autosaved annotations; the default is
+#' `tools::R_user_dir("CDALabeller", "data")`.
 #' @inheritParams shiny::shinyApp
 #'
 #' @export
