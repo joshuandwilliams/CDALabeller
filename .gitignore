@@ -12,3 +12,9 @@ Thumbs.db
 # R package build/check artifacts
 *.Rcheck/
 *.tar.gz
+
+# Built vignettes
+/doc/
+/Meta/
+vignettes/*.html
+vignettes/*.R

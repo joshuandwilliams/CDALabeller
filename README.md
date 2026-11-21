@@ -36,6 +36,17 @@ CDALabeller::run_app()
 
 This will launch the Shiny application in your web browser.
 
+The vignette describes the workflow and every column of the exported
+CSV:
+
+``` r
+vignette("CDALabeller", package = "CDALabeller")
+```
+
+Install with
+`devtools::install_github("joshuandwilliams/CDALabeller", build_vignettes = TRUE)`
+to include it.
+
 ## Features
 
 - **Image Upload:** Upload one or more TIF/TIFF images for annotation.
@@ -50,4 +61,8 @@ This will launch the Shiny application in your web browser.
 - **Undo:** Remove the last-drawn box with the “Undo Last Box” button.
 - **Export:** Download all annotations for all processed images as a
   single, tidy CSV file. This file is compatible with
-  [AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer)
+  [AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer).
+- **Autosave:** Annotations are saved to disk after every change, so
+  closing the browser loses nothing.
+- **Provenance:** Each row records the annotator, when the box was
+  drawn, the image’s MD5 checksum and the CDALabeller version.

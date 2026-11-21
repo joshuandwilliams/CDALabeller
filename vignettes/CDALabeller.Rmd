@@ -1,0 +1,103 @@
+---
+title: "Labelling cell death areas with CDALabeller"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Labelling cell death areas with CDALabeller}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+CDALabeller is a Shiny app for drawing square boxes around cell death areas
+(CDAs) in agroinfiltration images. Each box gets a treatment and a lesion
+score. The boxes are exported as a CSV file that
+[AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer) reads.
+
+## Starting the app
+
+```{r}
+CDALabeller::run_app()
+```
+
+The app opens in your browser. Closing the browser tab stops the app.
+
+## Labelling images
+
+![The app with two boxes drawn. The last box is white; earlier boxes are blue.](app.jpg){width=100%}
+
+1. **Upload.** Select one or more `.tif` or `.tiff` images. They are uploaded
+   once per session. Files must have distinct names, because boxes are stored
+   by file name.
+2. **Annotator.** Enter your name or initials. It is written to every row of
+   the export.
+3. **Draw.** Click and drag on the image. The box becomes a square by widening
+   its shorter side about the centre; it is shifted back inside the image if
+   that takes it over an edge. A box with a side longer than the image's
+   shorter side is rejected. A click without a drag draws nothing.
+4. **Treatment and score.** These fields apply to the last box drawn, shown in
+   white. The score must be a number from 0 to 6. Use the lesion score key
+   below the image. A score outside that range is outlined in red and exported
+   as `NA`. Either field may be left empty.
+5. **Undo Last Box** removes the white box.
+6. **Previous** and **Next** move between images. Boxes are kept for every
+   image.
+7. **Download Your Boxes** saves all boxes for all images as one CSV file.
+
+### Autosave
+
+After every change, the app rewrites a CSV file with the same columns as the
+download. The path is shown under the download button. There is one file per
+session, named after the time the session started. By default it is in
+`tools::R_user_dir("CDALabeller", "data")`. To choose another folder:
+
+```{r}
+CDALabeller::run_app(autosave_dir = "~/cda-annotations")
+```
+
+## The CSV file
+
+There is one row per box. Coordinates are in pixels of the original,
+full-size image. The origin is the top-left corner, with `x` to the right and
+`y` down. A box covers columns `x1` to `x2 - 1` and rows `y1` to `y2 - 1`, so
+its side is `x2 - x1` (equal to `y2 - y1`, as boxes are square).
+
+| Column | Type | Meaning |
+|---|---|---|
+| `img` | text | Image file name, without folder |
+| `x1`, `y1` | integer | Top-left corner |
+| `x2`, `y2` | integer | Bottom-right corner |
+| `treatment` | text | As entered, or `NA` |
+| `score` | number | 0 to 6, or `NA` if empty or invalid |
+| `annotator` | text | As entered, or `NA` |
+| `created_at` | text | When the box was drawn, as an ISO 8601 UTC timestamp |
+| `img_md5` | text | MD5 checksum of the uploaded image file |
+| `labeller_version` | text | CDALabeller version that wrote the file |
+
+`img_md5` identifies the exact image file a box was drawn on, even if files
+are later renamed or moved. Compare it with `tools::md5sum()` of a file.
+
+## Using the CSV with AutoCDAScorer
+
+`AutoCDAScorer::crop_and_load_images()` requires the columns `img`, `x1`,
+`x2`, `y1` and `y2`, and ignores the others. It opens each `img` as a file
+path. A browser upload does not reveal which folder a file came from, so
+`img` holds only the file name. Either run AutoCDAScorer with the image folder
+as the working directory, or add the folder to `img` first:
+
+```{r}
+boxes <- read.csv("bounding_boxes_20260101_120000.csv")
+boxes$img <- file.path("path/to/images", boxes$img)
+write.csv(boxes, "boxes_with_paths.csv", row.names = FALSE)
+
+crops <- AutoCDAScorer::crop_and_load_images("boxes_with_paths.csv")
+```
+
+## Note on earlier versions
+
+Before version 0.1.0, boxes were recorded one display pixel up and to the
+left of where they were drawn. In image pixels, that is the image width
+divided by its displayed width: about 4.6 pixels for a 5568 pixel wide image
+shown 1200 pixels wide. Version 0.1.0 also added the columns after `score`.
