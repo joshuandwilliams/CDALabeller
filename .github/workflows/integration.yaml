@@ -1,0 +1,36 @@
+# Checks that AutoCDAScorer reads CDALabeller's CSV (tests/integration). Kept out
+# of R CMD check because AutoCDAScorer is not on CRAN and needs keras3 and EBImage.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+name: integration.yaml
+
+permissions: read-all
+
+jobs:
+  autocdascorer:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            github::joshuandwilliams/AutoCDAScorer
+            local::.
+            any::testthat
+            any::withr
+          needs: integration
+
+      - name: Run integration tests
+        run: testthat::test_dir("tests/integration", stop_on_failure = TRUE)
+        shell: Rscript {0}
