@@ -18,9 +18,12 @@ start_app <- function(env = parent.frame()) {
     options = list(CDALabeller.autosave_dir = autosave)
   )
   withr::defer(app$stop(), envir = env)
-  stopifnot(startsWith(app$get_text("#autosave_path"), autosave))
   app$upload_file(image_upload = path)
-  app$wait_for_js("window.document.getElementById('myCanvas').style.visibility === 'visible'")
+  # Reading and scaling the image can take several seconds on CI runners
+  app$wait_for_js("window.document.getElementById('myCanvas').style.visibility === 'visible'", timeout = 30000)
+  # The path is only rendered once the control panel is shown after upload,
+  # because Shiny suspends hidden outputs.
+  stopifnot(startsWith(app$wait_for_value(output = "autosave_path"), autosave))
   app
 }
 
