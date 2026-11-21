@@ -80,6 +80,13 @@ h4 {
   cursor: crosshair;
 }
 
+/* Width is set to the displayed image's width in canvasUtils.js */
+#score-key {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .image-nav {
   display: flex;
   justify-content: space-between;

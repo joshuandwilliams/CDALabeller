@@ -37,7 +37,8 @@ app_ui <- function(request) {
           tags$div(
             id = "image-container",
             imageOutput("output_image", height = "auto"),
-            tags$canvas(id = "myCanvas")
+            tags$canvas(id = "myCanvas"),
+            tags$img(id = "score-key", src = "www/lesion_score_key.jpg", alt = "Lesion score key, 0 to 6")
           ),
           tags$div(
             class = "image-nav",

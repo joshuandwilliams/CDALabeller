@@ -43,6 +43,8 @@ This will launch the Shiny application in your web browser.
   automatically converted to squares to ensure uniform area selection.
 - **Annotation:** Add “Treatment” and “Score” metadata to each box you
   draw.
+- **Score key:** A 0–6 lesion score key, scaled to the image width, sits
+  below each image.
 - **Navigation:** Easily move between “Next” and “Previous” images in
   your uploaded set.
 - **Undo:** Remove the last-drawn box with the “Undo Last Box” button.

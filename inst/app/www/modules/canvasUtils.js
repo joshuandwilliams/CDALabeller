@@ -57,8 +57,8 @@ export function makeSquare(box, imgWidth, imgHeight) {
 }
 
 /**
- * Sizes the canvas to the displayed image once it has rendered, then enables
- * drawing.
+ * Sizes the canvas and the score key to the displayed image once it has
+ * rendered, then enables drawing.
  */
 export function ensureCanvasSize() {
   const image = document.querySelector("#output_image img");
@@ -66,6 +66,7 @@ export function ensureCanvasSize() {
 
   const checkImageSize = () => {
     if (image.offsetWidth > 0 && image.offsetHeight > 0) {
+      document.getElementById("score-key").style.width = image.offsetWidth + "px";
       redraw();
       appState.isReady = true;
       appState.canvas.style.visibility = "visible";
