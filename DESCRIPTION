@@ -1,6 +1,6 @@
 Package: CDALabeller
 Title: Label Cell Death Areas in Agroinfiltration Images
-Version: 0.1.0
+Version: 0.0.0.9000
 Authors@R: 
     person("Josh", "Williams", , "jowillia@nbi.ac.uk", role = c("aut", "cre"))
 Description: A 'shiny' app for drawing square bounding boxes around cell
