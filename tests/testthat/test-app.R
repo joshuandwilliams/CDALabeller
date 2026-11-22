@@ -16,19 +16,11 @@ start_app <- function(env = parent.frame()) {
   # which drops run_app()'s onStart and its settings.
   app_dir <- withr::local_tempdir(.local_envir = env)
   writeLines("CDALabeller::run_app()", file.path(app_dir, "app.R"))
-  autosave <- withr::local_tempdir(.local_envir = env)
-  app <- shinytest2::AppDriver$new(
-    app_dir,
-    width = 1800, height = 1400, load_timeout = 30000,
-    options = list(CDALabeller.autosave_dir = autosave)
-  )
+  app <- shinytest2::AppDriver$new(app_dir, width = 1800, height = 1400, load_timeout = 30000)
   withr::defer(app$stop(), envir = env)
   app$upload_file(image_upload = path)
   # Reading and scaling the image can take several seconds on CI runners
   app$wait_for_js("window.document.getElementById('myCanvas').style.visibility === 'visible'", timeout = 30000)
-  # The path is only rendered once the control panel is shown after upload,
-  # because Shiny suspends hidden outputs.
-  stopifnot(startsWith(app$wait_for_value(output = "autosave_path"), autosave))
   app
 }
 

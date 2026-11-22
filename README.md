@@ -23,8 +23,8 @@ You can install the development version of `CDALabeller` from
 [GitHub](https://github.com/joshuandwilliams/CDALabeller) with:
 
 ``` r
-install.packages("devtools")
-devtools::install_github("joshuandwilliams/CDALabeller")
+install.packages("pak")
+pak::pak("joshuandwilliams/CDALabeller")
 ```
 
 ## Example
@@ -45,9 +45,9 @@ CSV:
 vignette("CDALabeller", package = "CDALabeller")
 ```
 
-Install with
-`devtools::install_github("joshuandwilliams/CDALabeller", build_vignettes = TRUE)`
-to include it.
+`pak` does not build vignettes. To include it, install with
+`remotes::install_github("joshuandwilliams/CDALabeller", build_vignettes = TRUE)`
+instead.
 
 ## Features
 
@@ -64,7 +64,5 @@ to include it.
 - **Export:** Download all annotations for all processed images as a
   single, tidy CSV file. This file is compatible with
   [AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer).
-- **Autosave:** Annotations are saved to disk after every change, so
-  closing the browser loses nothing.
 - **Provenance:** Each row records the annotator, when the box was
   drawn, the image’s MD5 checksum and the CDALabeller version.

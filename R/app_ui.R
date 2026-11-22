@@ -61,11 +61,6 @@ app_ui <- function(request) {
           shiny::tags$div(
             id = "download-box",
             shiny::downloadButton("download_data", "Download Your Boxes")
-          ),
-          shiny::tags$p(
-            class = "autosave-note",
-            "Autosaved after every change to ",
-            shiny::textOutput("autosave_path", inline = TRUE)
           )
         )
       )

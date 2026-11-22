@@ -6,9 +6,8 @@ Authors@R:
 Description: A 'shiny' app for drawing square bounding boxes around cell
     death areas in agroinfiltration images, recording a treatment and a 0 to 6
     lesion score for each box, and exporting the boxes as a CSV file that
-    'AutoCDAScorer' reads. Annotations are autosaved, and each row records the
-    annotator, the time the box was drawn, the image's MD5 checksum and the
-    app version.
+    'AutoCDAScorer' reads. Each row records the annotator, the time the box
+    was drawn, the image's MD5 checksum and the app version.
 URL: https://github.com/joshuandwilliams/CDALabeller
 BugReports: https://github.com/joshuandwilliams/CDALabeller/issues
 License: MIT + file LICENSE
