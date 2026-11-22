@@ -5,7 +5,7 @@ This is a new submission. It has not been submitted yet: the version is still
 
 ## R CMD check results
 
-Local, macOS 26.1, R 4.4.2, `R CMD check --as-cran`: 0 errors, 0 warnings,
+Local, macOS 26.6.1, R 4.4.2, `R CMD check --as-cran`: 0 errors, 0 warnings,
 3 notes.
 
 * New submission. Version contains large components (0.0.0.9000).
