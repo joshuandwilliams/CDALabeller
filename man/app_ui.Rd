@@ -9,6 +9,9 @@ app_ui(request)
 \arguments{
 \item{request}{Internal parameter for \{shiny\}.}
 }
+\value{
+A [shiny::tagList()] holding the app's user interface.
+}
 \description{
 The application User-Interface
 }
