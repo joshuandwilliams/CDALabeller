@@ -107,7 +107,7 @@ test_that("annotations are formatted to the export schema", {
   )
   files <- data.frame(name = c("a.tif", "b.tif"), md5 = c("aaa", "bbb"))
 
-  df <- format_annotations(boxes, files, annotator = "JW")
+  df <- format_annotations(boxes, files)
 
   expect_equal(names(df), annotation_columns)
   expect_equal(df$img, c("a.tif", "a.tif"))
@@ -116,13 +116,12 @@ test_that("annotations are formatted to the export schema", {
   expect_equal(df$score, c(2, NA))
   expect_equal(df$created_at, c("2026-01-01T00:00:00.000Z", NA))
   expect_equal(df$img_md5, c("aaa", "aaa"))
-  expect_equal(df$annotator, c("JW", "JW"))
   expect_equal(df$labeller_version, rep(as.character(utils::packageVersion("CDALabeller")), 2))
 })
 
 test_that("with no boxes the export has the schema columns and no rows", {
   for (boxes in list(list(), list(a.tif = list()))) {
-    df <- format_annotations(boxes, data.frame(name = "a.tif", md5 = "aaa"), annotator = "")
+    df <- format_annotations(boxes, data.frame(name = "a.tif", md5 = "aaa"))
     expect_equal(names(df), annotation_columns)
     expect_equal(nrow(df), 0)
   }

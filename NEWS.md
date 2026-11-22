@@ -3,9 +3,9 @@
 ## Breaking changes
 
 * The CSV file now always has the same columns in the same order. They are
-  `img`, `x1`, `y1`, `x2`, `y2`, `treatment`, `score`, `annotator`,
-  `created_at`, `img_md5` and `labeller_version`. The columns that AutoCDAScorer needs (`img`, `x1`,
-  `x2`, `y1` and `y2`) have not changed.
+  `img`, `x1`, `y1`, `x2`, `y2`, `treatment`, `score`, `created_at`,
+  `img_md5` and `labeller_version`. The columns that AutoCDAScorer needs
+  (`img`, `x1`, `x2`, `y1` and `y2`) have not changed.
 * `score`, the cell death severity score, is now a number. It is `NA` unless
   it is between 0 and 6.
 * `run_app()` no longer has a `launch.browser` argument. It never had any
@@ -29,9 +29,8 @@
 
 * A cell death severity scoring key is shown below the source image. It gives
   an example CDA for each score from 0 to 6. It is resized to match the image.
-* An Annotator field. The annotator is saved with every annotation. So are the
-  time the bounding box was drawn, the source image's MD5 checksum and the
-  CDALabeller version.
+* Each annotation records when the bounding box was drawn, the source image's
+  MD5 checksum and the CDALabeller version.
 * Uploads are rejected if two files have the same name.
 * A score outside 0 to 6 is outlined in red.
 

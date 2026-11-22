@@ -62,7 +62,7 @@ you have not downloaded are lost.
   removes the last bounding box you drew.
 - **Download.** Save the annotations for all source images as one CSV
   file.
-- **Trace.** Each row records who annotated the CDA and when. It also
+- **Trace.** Each row records when the bounding box was drawn. It also
   records the exact source image file and the version of CDALabeller
   used.
 

@@ -20,7 +20,7 @@ boxes <- list(squares.tif = list(
   list(x1 = 10, y1 = 20, x2 = 110, y2 = 120, treatment = "T1", score = "2"),
   list(x1 = 520, y1 = 320, x2 = 600, y2 = 400, treatment = "T2", score = "5")
 ))
-export <- CDALabeller:::format_annotations(boxes, files, annotator = "test")
+export <- CDALabeller:::format_annotations(boxes, files)
 
 # A crop shifted by even one pixel would include grey, which has all three
 # channels non-zero.
