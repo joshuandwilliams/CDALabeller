@@ -57,6 +57,14 @@ session, named after the time the session started. By default it is in
 CDALabeller::run_app(autosave_dir = "~/cda-annotations")
 ```
 
+When the app starts, it deletes autosaves in that folder that are more than 30
+days old. Only files named like `autosave_20260101_120000.csv` are deleted.
+Download the CSV for anything you want to keep, or change the period:
+
+```{r}
+CDALabeller::run_app(autosave_keep_days = 90) # Inf keeps every autosave
+```
+
 ## The CSV file
 
 There is one row per box. Coordinates are in pixels of the original,
