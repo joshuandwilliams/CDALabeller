@@ -40,7 +40,7 @@ export function ensureCanvasSize() {
     // Stop if Shiny has since replaced this image; its own call takes over
     if (image !== document.querySelector("#output_image img")) return;
     if (image.complete && image.offsetWidth > 0 && image.offsetHeight > 0) {
-      document.getElementById("score-key").style.width = image.offsetWidth + "px";
+      alignKeyRow(image);
       redraw();
       appState.isReady = true;
       appState.canvas.style.visibility = "visible";
@@ -50,6 +50,19 @@ export function ensureCanvasSize() {
     }
   };
   checkImageSize();
+}
+
+/**
+ * Gives the scoring key's row the displayed image's width and left edge, so the
+ * key, centred in the row, is centred on the image.
+ * @param {HTMLImageElement} image - The displayed source image.
+ */
+function alignKeyRow(image) {
+  const row = document.getElementById("score-key-row");
+  row.style.width = image.offsetWidth + "px";
+  row.style.marginLeft = "0px";
+  const shift = image.getBoundingClientRect().left - row.getBoundingClientRect().left;
+  row.style.marginLeft = shift + "px";
 }
 
 /**

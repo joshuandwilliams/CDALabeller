@@ -27,6 +27,7 @@ handle_image_upload <- function(input, image_files) {
     shinyjs::hide(selector = ".step1-container")
     shinyjs::show(selector = "#step2-title")
     shinyjs::show(selector = "#image-container")
+    shinyjs::show(selector = "#score-key-row")
     shinyjs::show(selector = ".control-panel")
     if (nrow(files) > 1) {
       shinyjs::show(selector = ".image-nav")

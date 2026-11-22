@@ -16,7 +16,7 @@ app_ui <- function(request) {
       shiny::tags$div(
         class = "title-container",
         shiny::h2("CDALabeller"),
-        shiny::tags$p("Draw bounding box annotations around cell death areas")
+        shiny::tags$p("Draw bounding box annotations around cell death areas.")
       ),
       shiny::fluidRow(
         class = "main-container",
@@ -39,7 +39,12 @@ app_ui <- function(request) {
           shiny::tags$div(
             id = "image-container",
             shiny::imageOutput("output_image", height = "auto"),
-            shiny::tags$canvas(id = "myCanvas"),
+            shiny::tags$canvas(id = "myCanvas")
+          ),
+          # Below the drawing area, so it cannot be drawn on. Its width is set
+          # to the image's in canvasUtils.js, which centres the key on the image.
+          shiny::tags$div(
+            id = "score-key-row",
             shiny::tags$img(
               id = "score-key", src = "www/lesion_score_key.jpg",
               alt = "Cell death severity scoring key, 0 to 6"
@@ -63,10 +68,7 @@ app_ui <- function(request) {
           shiny::tags$hr(),
           shiny::actionButton("undoButton", "Undo Last Box"),
           shiny::tags$hr(),
-          shiny::tags$div(
-            id = "download-box",
-            shiny::downloadButton("download_data", "Download Your Boxes")
-          )
+          shiny::downloadButton("download_data", "Download Your Boxes")
         )
       )
     )
