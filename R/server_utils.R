@@ -100,7 +100,7 @@ handle_nav_button_visibility <- function(image_files, current_index) {
 #'
 #' Stores the boxes sent by the client (`input$bbox_coords`) under their
 #' image filename in `all_boxes`. Warns if a score is not valid; such scores
-#' are exported as `NA` (see [parse_score()]).
+#' are exported as `NA` (see `parse_score()`).
 #'
 #' @param input The Shiny input object from the server function.
 #' @param all_boxes A `reactiveVal` to store all bounding box annotations.
@@ -169,7 +169,7 @@ render_image_counter <- function(image_files, current_index) {
   })
 }
 
-#' Highest score on the lesion score key.
+#' Highest cell death severity score on the scoring key.
 #' @noRd
 max_score <- 6
 

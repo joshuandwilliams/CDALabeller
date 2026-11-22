@@ -10,9 +10,9 @@ app_ui(request)
 \item{request}{Used internally by Shiny.}
 }
 \value{
-A [shiny::tagList()] holding the app's user interface.
+A \code{\link[shiny:reexports]{shiny::tagList()}} holding the app's user interface.
 }
 \description{
-Builds the page that [run_app()] shows. You do not normally need to call this
+Builds the page that \code{\link[=run_app]{run_app()}} shows. You do not normally need to call this
 yourself.
 }

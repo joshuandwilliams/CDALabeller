@@ -11,9 +11,9 @@ app_server(input, output, session)
 }
 \value{
 Nothing. It is called for its side effects, which set up the app's
-  responses to the user.
+responses to the user.
 }
 \description{
-Responds to what the user does in the app started by [run_app()]. You do
+Responds to what the user does in the app started by \code{\link[=run_app]{run_app()}}. You do
 not normally need to call this yourself.
 }
