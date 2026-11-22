@@ -28,7 +28,8 @@
 ## New features
 
 * A cell death severity scoring key is shown below the source image. It gives
-  an example CDA for each score from 0 to 6. It is resized to match the image.
+  an example CDA for each score from 0 to 6. It is centred under the image and
+  scales with it.
 * Each annotation records when the bounding box was drawn, the source image's
   MD5 checksum and the CDALabeller version.
 * Uploads are rejected if two files have the same name.

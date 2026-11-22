@@ -19,6 +19,7 @@ app_server <- function(input, output, session) {
   # Hidden until images are uploaded
   shinyjs::hide(selector = "#step2-title")
   shinyjs::hide(selector = "#image-container")
+  shinyjs::hide(selector = "#score-key-row")
   shinyjs::hide(selector = ".image-nav")
   shinyjs::hide(selector = ".control-panel")
 

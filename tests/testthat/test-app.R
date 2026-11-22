@@ -88,3 +88,20 @@ test_that("the downloaded CSV holds the drawn box and its annotations", {
   expect_match(csv$created_at, "^\\d{4}-\\d{2}-\\d{2}T")
   expect_match(csv$img_md5, "^[0-9a-f]{32}$")
 })
+
+test_that("the scoring key sits below the drawing area, centred on the image", {
+  app <- start_app()
+  layout <- app$get_js(
+    "(() => {
+       const c = document.getElementById('myCanvas').getBoundingClientRect();
+       const k = document.getElementById('score-key').getBoundingClientRect();
+       const x = k.left + k.width / 2, y = k.top + k.height / 2;
+       return {below: k.top >= c.bottom,
+               offset: Math.abs(x - (c.left + c.width / 2)),
+               hit: document.elementFromPoint(x, y).id};
+     })()"
+  )
+  expect_true(layout$below)
+  expect_lt(layout$offset, 1)
+  expect_equal(layout$hit, "score-key")
+})
