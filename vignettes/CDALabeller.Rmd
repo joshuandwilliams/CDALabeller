@@ -1,8 +1,8 @@
 ---
-title: "Labelling cell death areas with CDALabeller"
+title: "Annotating cell death areas with CDALabeller"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Labelling cell death areas with CDALabeller}
+  %\VignetteIndexEntry{Annotating cell death areas with CDALabeller}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -11,11 +11,13 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-CDALabeller is an app for labelling cell death areas (CDAs) in photographs of
-agroinfiltrated leaves. You draw a square around each area and give it a
-treatment and a score. The app saves the squares as a CSV file. That file can
-be read by [AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer),
-which scores cell death areas automatically.
+CDALabeller is an app for annotating cell death areas (CDAs) in
+agroinfiltration source images. Each source image shows several leaves, and
+each leaf has several infiltration sites. You draw a bounding box around each
+CDA and record its treatment and cell death severity score. The app saves the
+annotations as a CSV file.
+[AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer) reads that
+file to crop and score each CDA automatically.
 
 ## Starting the app
 
@@ -25,58 +27,64 @@ CDALabeller::run_app()
 
 The app opens in your web browser. In Positron, it opens in the Viewer pane.
 
-The app keeps your boxes only while it is open. Closing its tab stops the app,
-and any boxes you have not downloaded are lost.
+The app keeps your annotations only while it is open. Closing its tab stops the
+app, and any annotations you have not downloaded are lost.
 
-## Labelling images
+## Annotating source images
 
-![The app with two boxes drawn. The most recent box is white. Earlier boxes are blue.](app.jpg){width=100%}
+![CDALabeller with three bounding boxes drawn. The most recent box is white and earlier boxes are blue.](../man/figures/README-app.jpg){width=100%}
 
-1. **Upload.** Choose one or more `.tif` or `.tiff` images. Each file can be up
-   to 200 MB. You can upload images once per session. Each file must have a
-   different name, because the app stores boxes by file name.
-2. **Annotator.** Enter your name or initials. They are saved with every box.
-3. **Draw.** Click and drag on the image to draw a box. The app makes the box
-   square by lengthening its shorter sides equally on both ends. If the square
-   would cross the edge of the image, it is moved back inside. A box cannot be
-   wider or taller than the image's shorter side. A click without a drag draws
-   nothing.
-4. **Treatment and score.** These fields apply to the most recent box, which is
-   drawn in white. The score runs from 0 (no cell death) to 6 (strong cell
-   death). Compare the area with the score key below the image. A score outside
-   0 to 6 is outlined in red and saved as `NA`, meaning missing. You may leave
-   either field empty.
-5. **Undo Last Box** removes the white box.
-6. **Previous** and **Next** move between images. Each image keeps its own
-   boxes.
-7. **Download Your Boxes** saves the boxes for all images as one CSV file.
+1. **Upload.** Choose one or more source images as `.tif` or `.tiff` files.
+   Each file can be up to 200 MB. You can upload images once per session. Each
+   file must have a different name, because the app stores annotations by file
+   name.
+2. **Draw.** Click and drag on the source image to draw a rectangular bounding
+   box around a CDA. The app extends the box to a square by lengthening its
+   shorter sides equally on both ends. If the square would cross the edge of the
+   image, it is moved back inside. A box cannot be wider or taller than the
+   image's shorter side. A click without a drag draws nothing.
+3. **Treatment and severity score.** These fields apply to the most recent
+   bounding box, which is drawn in white. The severity score runs from 0 (no
+   cell death) to 6 (strong cell death). Compare the CDA with the scoring key
+   below the image. A score outside 0 to 6 is outlined in red and saved as
+   `NA`, meaning missing. You may leave either field empty.
+4. **Undo Last Box** removes the white bounding box.
+5. **Previous** and **Next** move between source images. Each source image keeps
+   its own annotations.
+6. **Download Your Boxes** saves the annotations for all source images as one
+   CSV file.
+
+The scoring key is adapted from Maqbool et al. (2015), *eLife* 4, e08709
+(<https://doi.org/10.7554/eLife.08709>). It shows one example CDA for each
+score, so real CDAs will not always match one example exactly.
 
 ## The CSV file
 
-The file has one row per box. Each box is given in pixels of the original,
-full-size image, not the smaller copy shown on screen. Pixels are counted from
-the top-left corner of the image. `x` increases to the right and `y`
-increases downwards.
+The file has one row per CDA. Each bounding box is given in pixels of the
+original, full-size source image, not the smaller copy shown on screen. Pixels
+are counted from the top-left corner of the image. `x` increases to the right
+and `y` increases downwards.
 
-A box starts at column `x1` and row `y1`. It ends just before column `x2` and
-row `y2`. Its width is therefore `x2 - x1`, which equals its height `y2 - y1`.
+A bounding box starts at column `x1` and row `y1`. It ends just before column
+`x2` and row `y2`. Its width is therefore `x2 - x1`, which equals its height
+`y2 - y1`.
 
 | Column | Type | Meaning |
 |---|---|---|
-| `img` | text | Image file name, without its folder |
-| `x1`, `y1` | whole number | Top-left corner of the box |
-| `x2`, `y2` | whole number | Bottom-right corner of the box |
+| `img` | text | Source image file name, without its folder |
+| `x1`, `y1` | whole number | Top-left corner of the bounding box |
+| `x2`, `y2` | whole number | Bottom-right corner of the bounding box |
 | `treatment` | text | The treatment entered, or `NA` |
-| `score` | number | The score, from 0 to 6, or `NA` if empty or invalid |
-| `annotator` | text | The annotator entered, or `NA` |
-| `created_at` | text | When the box was drawn, in UTC, e.g. `2026-11-22T08:49:39.000Z` |
-| `img_md5` | text | MD5 checksum of the image file |
+| `score` | number | The severity score, from 0 to 6, or `NA` if empty or invalid |
+| `created_at` | text | When the bounding box was drawn, in UTC, e.g. `2026-11-22T08:49:39.000Z` |
+| `img_md5` | text | MD5 checksum of the source image file |
 | `labeller_version` | text | Version of CDALabeller that wrote the file |
 
 An MD5 checksum is a 32-character code calculated from a file's contents.
 Identical files have the same code, and any change to a file changes it. It
-therefore identifies the exact image a box was drawn on, even if the file is
-renamed or moved. To find a file's checksum, run `tools::md5sum("path/to/file")`.
+therefore identifies the exact source image a CDA was annotated on, even if the
+file is renamed or moved. To find a file's checksum, run
+`tools::md5sum("path/to/file")`.
 
 ## Using the CSV with AutoCDAScorer
 
@@ -85,22 +93,22 @@ renamed or moved. To find a file's checksum, run `tools::md5sum("path/to/file")`
 a file.
 
 The `img` column holds only the file name. This is because a web browser does
-not tell the app which folder a file came from. There are two ways to deal with this.
-You can run AutoCDAScorer with the image folder as R's working directory. Or
-you can add the folder to each file name first:
+not tell the app which folder a file came from. There are two ways to deal
+with this. You can run AutoCDAScorer with the source image folder as R's
+working directory. Or you can add the folder to each file name first:
 
 ```{r}
-boxes <- read.csv("bounding_boxes_20260101_120000.csv")
-boxes$img <- file.path("path/to/images", boxes$img)
-write.csv(boxes, "boxes_with_paths.csv", row.names = FALSE)
+annotations <- read.csv("bounding_boxes_20260101_120000.csv")
+annotations$img <- file.path("path/to/source/images", annotations$img)
+write.csv(annotations, "annotations_with_paths.csv", row.names = FALSE)
 
-crops <- AutoCDAScorer::crop_and_load_images("boxes_with_paths.csv")
+crops <- AutoCDAScorer::crop_and_load_images("annotations_with_paths.csv")
 ```
 
 ## Files made by earlier versions
 
 A CSV file with no `labeller_version` column comes from an earlier version of
-CDALabeller. Those versions saved every box one screen pixel up and to the left of where it
-was drawn. In image pixels, the error equals the image's full width divided by
-its width on screen. For a 5568 pixel wide image shown 1200 pixels wide, that
-is about 4.6 pixels.
+CDALabeller. Those versions saved every bounding box one screen pixel up and to
+the left of where it was drawn. In image pixels, the error equals the source
+image's full width divided by its width on screen. For a 5568 pixel wide image
+shown 1200 pixels wide, that is about 4.6 pixels.

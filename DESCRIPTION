@@ -3,11 +3,12 @@ Title: Label Cell Death Areas in Agroinfiltration Images
 Version: 0.0.0.9000
 Authors@R: 
     person("Joshua", "Williams", , "joshuandwilliams@outlook.com", role = c("aut", "cre"))
-Description: A 'shiny' app for drawing square bounding boxes around cell
-    death areas in agroinfiltration images, recording a treatment and a 0 to 6
-    lesion score for each box, and exporting the boxes as a CSV file that
-    'AutoCDAScorer' reads. Each row records the annotator, the time the box
-    was drawn, the image's MD5 checksum and the app version.
+Description: A 'shiny' app for annotating cell death areas (CDAs) in
+    agroinfiltration source images. Users draw a square bounding box around
+    each CDA and record its treatment. They also give it a cell death severity
+    score from 0 to 6. The annotations are exported as a CSV file that
+    'AutoCDAScorer' reads. Each row also records when the bounding box was
+    drawn, the source image's MD5 checksum and the app version.
 URL: https://github.com/joshuandwilliams/CDALabeller
 BugReports: https://github.com/joshuandwilliams/CDALabeller/issues
 License: MIT + file LICENSE
@@ -22,6 +23,7 @@ Imports:
     utils
 Encoding: UTF-8
 Language: en-GB
+Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Suggests: 
     chromote,

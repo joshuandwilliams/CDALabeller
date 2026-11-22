@@ -40,7 +40,10 @@ app_ui <- function(request) {
             id = "image-container",
             shiny::imageOutput("output_image", height = "auto"),
             shiny::tags$canvas(id = "myCanvas"),
-            shiny::tags$img(id = "score-key", src = "www/lesion_score_key.jpg", alt = "Lesion score key, 0 to 6")
+            shiny::tags$img(
+              id = "score-key", src = "www/lesion_score_key.jpg",
+              alt = "Cell death severity scoring key, 0 to 6"
+            )
           ),
           shiny::tags$div(
             class = "image-nav",
@@ -54,10 +57,9 @@ app_ui <- function(request) {
         shiny::column(
           width = 3,
           class = "control-panel",
-          shiny::tags$h4("Step 2: Record Treatment / Score"),
-          shiny::textInput("annotator_input", "Annotator:", placeholder = "Your name or initials"),
+          shiny::tags$h4("Step 2: Record Treatment / Severity Score"),
           shiny::textInput("treatment_input", "Treatment:", placeholder = "e.g. Treatment A"),
-          shiny::textInput("score_input", "Score:", placeholder = "e.g. 0-6"),
+          shiny::textInput("score_input", "Severity score:", placeholder = "0 to 6"),
           shiny::tags$hr(),
           shiny::actionButton("undoButton", "Undo Last Box"),
           shiny::tags$hr(),

@@ -16,12 +16,15 @@ output:
 
 <!-- badges: end -->
 
-CDALabeller is an app for labelling cell death areas (CDAs) in photographs of
-agroinfiltrated leaves. You draw a square around each area and note its
-treatment. You also give it a score from 0 (no cell death) to 6 (strong cell
-death). The app then saves your squares as a CSV file. That file can be read
-by [AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer), which
-scores cell death areas automatically.
+CDALabeller is an app for annotating cell death areas (CDAs) in
+agroinfiltration source images. Each source image shows several leaves, and
+each leaf has several infiltration sites. You draw a bounding box around each
+CDA and record its treatment. You also give it a cell death severity score
+from 0 (no cell death) to 6 (strong cell death). The app saves the
+annotations as a CSV file. [AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer)
+reads that file to crop and score each CDA automatically.
+
+![CDALabeller with three bounding boxes drawn. The most recent box is white and earlier boxes are blue. The scoring key is below the source image.](man/figures/README-app.jpg)
 
 ## Installation
 
@@ -32,14 +35,6 @@ install.packages("pak")
 pak::pak("joshuandwilliams/CDALabeller")
 ```
 
-`pak` does not build the package's guide (its vignette). To include the guide,
-install with `remotes` instead:
-
-```{r, eval = FALSE}
-install.packages("remotes")
-remotes::install_github("joshuandwilliams/CDALabeller", build_vignettes = TRUE)
-```
-
 ## Running the app
 
 ```{r, eval = FALSE}
@@ -47,29 +42,31 @@ CDALabeller::run_app()
 ```
 
 The app opens in your web browser. In Positron, it opens in the Viewer pane
-instead. Closing the app's tab stops the app, and any boxes you have not
+instead. Closing the app's tab stops the app, and any annotations you have not
 downloaded are lost.
 
 ## What the app does
 
-* **Upload.** Upload one or more TIFF images. Each file can be up to 200 MB.
-* **Draw.** Click and drag to draw a box around a cell death area. Each box is
-  made square, so every area is cropped to the same shape.
-* **Record.** Enter a treatment and a score for each box. A score key below the
-  image shows example areas for each score.
-* **Review.** Move between images with Previous and Next. Undo removes the last
-  box you drew.
-* **Download.** Save the boxes for all images as one CSV file.
-* **Trace.** Each row records who drew the box and when they drew it. It also
-  records the exact image file and the version of CDALabeller used.
+* **Upload.** Upload one or more source images as TIFF files. Each file can be
+  up to 200 MB.
+* **Draw.** Click and drag to draw a bounding box around a CDA. The box is
+  extended to a square and kept inside the image. Every CDA is therefore
+  cropped to the same shape.
+* **Score.** Enter a treatment and a severity score for each CDA. The scoring
+  key below the image shows an example CDA for each score.
+* **Review.** Move between source images with Previous and Next. Undo removes
+  the last bounding box you drew.
+* **Download.** Save the annotations for all source images as one CSV file.
+* **Trace.** Each row records when the bounding box was drawn. It also records
+  the exact source image file and the version of CDALabeller used.
 
 ## Guide
 
-The guide explains each step and every column of the CSV file:
+The [guide](https://github.com/joshuandwilliams/CDALabeller/blob/main/vignettes/CDALabeller.Rmd)
+explains each step and every column of the CSV file.
 
-```{r, eval = FALSE}
-vignette("CDALabeller", package = "CDALabeller")
-```
+The scoring key is adapted from Maqbool et al. (2015), *eLife* 4, e08709
+(<https://doi.org/10.7554/eLife.08709>).
 
 ## Citing CDALabeller
 

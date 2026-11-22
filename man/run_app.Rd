@@ -34,11 +34,11 @@ request. Note that the entire request path must match the regular
 expression in order for the match to be considered successful.}
 
 \item{...}{Options passed to the app through golem
-(see `?golem::get_golem_options`). CDALabeller does not use any yet.}
+(see \code{?golem::get_golem_options}). CDALabeller does not use any yet.}
 }
 \value{
 A Shiny app object. Printing it starts the app, which is what
-  happens when you call `run_app()` at the console.
+happens when you call \code{run_app()} at the console.
 }
 \description{
 Opens the app in your web browser, or in the Viewer pane in Positron. While
