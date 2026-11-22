@@ -26,34 +26,51 @@ export function redraw() {
 
 /**
  * Sizes the canvas and the score key to the displayed image once it has
- * rendered, then enables drawing.
+ * rendered, then enables drawing. Called whenever the image element changes
+ * (see watchImage) and on window resize.
  */
 export function ensureCanvasSize() {
   const image = document.querySelector("#output_image img");
-  if (!image || !appState.canvas) return;
+  appState.canvas.style.pointerEvents = "none";
+  appState.canvas.style.visibility = "hidden";
+  appState.isReady = false;
+  if (!image) return;
 
   const checkImageSize = () => {
-    if (image.offsetWidth > 0 && image.offsetHeight > 0) {
+    // Stop if Shiny has since replaced this image; its own call takes over
+    if (image !== document.querySelector("#output_image img")) return;
+    if (image.complete && image.offsetWidth > 0 && image.offsetHeight > 0) {
       document.getElementById("score-key").style.width = image.offsetWidth + "px";
       redraw();
       appState.isReady = true;
       appState.canvas.style.visibility = "visible";
       appState.canvas.style.pointerEvents = "auto";
     } else {
-      setTimeout(checkImageSize, 10);
+      setTimeout(checkImageSize, 20);
     }
   };
+  checkImageSize();
+}
 
-  appState.canvas.style.pointerEvents = "none";
-  appState.canvas.style.visibility = "hidden";
-  appState.isReady = false;
-
-  if (image.complete && image.offsetWidth > 0) {
-    checkImageSize();
-  } else {
-    image.onload = checkImageSize;
-    setTimeout(checkImageSize, 50);
-  }
+/**
+ * Watches the image output. Whenever Shiny renders a new image, reads its file
+ * name and original size from the img element's data- attributes (set in
+ * render_output_image), shows that image's boxes and sizes the canvas.
+ */
+export function watchImage() {
+  const output = document.getElementById("output_image");
+  const onImageChange = () => {
+    const image = output.querySelector("img");
+    if (!image || !image.dataset.filename) return;
+    appState.currentImage = image.dataset.filename;
+    appState.originalImageWidth = Number(image.dataset.width);
+    appState.originalImageHeight = Number(image.dataset.height);
+    syncInputsToLastBox();
+    ensureCanvasSize();
+  };
+  new MutationObserver(onImageChange).observe(output, {
+    childList: true, subtree: true, attributes: true, attributeFilter: ["src", "data-filename"],
+  });
 }
 
 /**

@@ -25,9 +25,8 @@ app_server <- function(input, output, session) {
   handle_image_navigation(input, image_files, current_index)
   handle_nav_button_visibility(image_files, current_index)
   update_annotations(input, all_boxes)
-  notify_client_of_new_image(session, processed_image_info, image_files, current_index)
 
-  output$output_image <- render_output_image(processed_image_info, current_index)
+  output$output_image <- render_output_image(processed_image_info, image_files, current_index)
   output$image_counter <- render_image_counter(image_files, current_index)
   annotator <- shiny::reactive(input$annotator_input)
   output$download_data <- setup_download_handler(all_boxes, image_files, annotator)

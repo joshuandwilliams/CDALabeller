@@ -18,6 +18,10 @@ test_that("uploading images stores them with checksums and processes the first",
     expect_equal(current_index(), 1)
     info <- processed_image_info()
     expect_equal(c(info$original_width, info$original_height), c(600, 400))
+    img <- output$output_image
+    expect_equal(img[c("data-filename", "data-width", "data-height")], list(
+      `data-filename` = "_DSC0024.tif", `data-width` = 600, `data-height` = 400
+    ))
   })
 })
 

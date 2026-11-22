@@ -124,21 +124,29 @@ update_annotations <- function(input, all_boxes) {
 
 #' Render the main output image.
 #'
-#' @param processed_image_info A reactive expression that returns a list
-#'   containing the path to the processed image.
-#' @param current_index A `reactiveVal` holding the index of the current image,
-#'   used for the alt text.
+#' The `img` element carries the image's file name and original dimensions as
+#' `data-` attributes. The client reads them from the element it is drawing
+#' over, so the canvas scale always matches the image on screen.
+#'
+#' @param processed_image_info A reactive expression that returns the processed
+#'   image's path and original dimensions.
+#' @param image_files A `reactiveVal` holding the uploaded image file data.
+#' @param current_index A `reactiveVal` for the index of the current image.
 #'
 #' @return A `renderImage` object.
 #'
 #' @noRd
-render_output_image <- function(processed_image_info, current_index) {
+render_output_image <- function(processed_image_info, image_files, current_index) {
   shiny::renderImage(
     {
+      info <- processed_image_info()
       list(
-        src = processed_image_info()$path,
+        src = info$path,
         contentType = "image/jpeg",
-        alt = paste("Image", current_index())
+        alt = paste("Image", current_index()),
+        `data-filename` = image_files()$name[current_index()],
+        `data-width` = info$original_width,
+        `data-height` = info$original_height
       )
     },
     deleteFile = TRUE
@@ -247,27 +255,4 @@ setup_download_handler <- function(all_boxes, image_files, annotator) {
       utils::write.csv(df, file, row.names = FALSE)
     }
   )
-}
-
-#' Notify client about a new processed image.
-#'
-#' Sends the image's original filename and dimensions so the client can map
-#' canvas coordinates back to original-image pixels.
-#'
-#' @param session The Shiny session object from the server function.
-#' @param processed_image_info A reactive expression that returns metadata for
-#'   the currently processed image.
-#' @param image_files A `reactiveVal` holding the uploaded image file data.
-#' @param current_index A `reactiveVal` for the index of the current image.
-#'
-#' @noRd
-notify_client_of_new_image <- function(session, processed_image_info, image_files, current_index) {
-  shiny::observeEvent(processed_image_info(), {
-    info <- processed_image_info()
-    session$sendCustomMessage("image_loaded", list(
-      filename = image_files()$name[current_index()],
-      width = info$original_width,
-      height = info$original_height
-    ))
-  })
 }
