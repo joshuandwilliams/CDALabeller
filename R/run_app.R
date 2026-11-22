@@ -1,15 +1,7 @@
 #' Run the Shiny Application
 #'
-#' @param ... Settings passed to the app as golem options
-#'   (see `?golem::get_golem_options`):
-#'   * `autosave_dir`: directory for autosaved annotations. The default is
-#'     `tools::R_user_dir("CDALabeller", "data")`.
-#'   * `autosave_keep_days`: autosaves in that directory older than this many
-#'     days are deleted when the app starts. The default is 30; `Inf` keeps
-#'     them all.
-#'
-#'   Each can instead be set with an R option, e.g.
-#'   `options(CDALabeller.autosave_keep_days = 90)`.
+#' @param ... arguments to pass to golem_opts.
+#' See `?golem::get_golem_options` for more details.
 #' @inheritParams shiny::shinyApp
 #'
 #' @return A Shiny app object. Printing it, as happens when `run_app()` is
@@ -18,7 +10,6 @@
 #' @examples
 #' if (interactive()) {
 #'   run_app()
-#'   run_app(autosave_dir = "~/cda-annotations", autosave_keep_days = 90)
 #' }
 #'
 #' @export
@@ -32,11 +23,30 @@ run_app <- function(
     app = shiny::shinyApp(
       ui = app_ui,
       server = app_server,
-      onStart = onStart,
+      onStart = function() set_upload_limit(onStart),
       options = options,
       enableBookmarking = enableBookmarking,
       uiPattern = uiPattern
     ),
     golem_opts = list(...)
   )
+}
+
+#' Largest upload Shiny accepts while the app runs: 200 MB, enough for
+#' full-size camera TIFFs (about 62 MB each). Shiny's default is 5 MB.
+#' @noRd
+max_upload_bytes <- 200 * 1024^2
+
+#' Raise Shiny's upload limit for as long as the app runs.
+#'
+#' Called as the app's `onStart`. Shiny reads `shiny.maxRequestSize` at each
+#' upload, so setting it here is enough; the previous value is restored when
+#' the app stops, so the user's options are left as they were.
+#'
+#' @param onStart The `onStart` function passed to [run_app()], or `NULL`.
+#' @noRd
+set_upload_limit <- function(onStart = NULL) {
+  old <- options(shiny.maxRequestSize = max_upload_bytes)
+  shiny::onStop(function() options(old))
+  if (!is.null(onStart)) onStart()
 }

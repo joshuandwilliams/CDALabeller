@@ -33,16 +33,8 @@ request to determine whether the \code{ui} should be used to handle the
 request. Note that the entire request path must match the regular
 expression in order for the match to be considered successful.}
 
-\item{...}{Settings passed to the app as golem options
-  (see `?golem::get_golem_options`):
-  * `autosave_dir`: directory for autosaved annotations. The default is
-    `tools::R_user_dir("CDALabeller", "data")`.
-  * `autosave_keep_days`: autosaves in that directory older than this many
-    days are deleted when the app starts. The default is 30; `Inf` keeps
-    them all.
-
-  Each can instead be set with an R option, e.g.
-  `options(CDALabeller.autosave_keep_days = 90)`.}
+\item{...}{arguments to pass to golem_opts.
+See `?golem::get_golem_options` for more details.}
 }
 \value{
 A Shiny app object. Printing it, as happens when `run_app()` is
@@ -54,7 +46,6 @@ Run the Shiny Application
 \examples{
 if (interactive()) {
   run_app()
-  run_app(autosave_dir = "~/cda-annotations", autosave_keep_days = 90)
 }
 
 }

@@ -23,8 +23,8 @@ The goal of `CDALabeller` is to provide a simple, interactive tool for drawing b
 You can install the development version of `CDALabeller` from [GitHub](https://github.com/joshuandwilliams/CDALabeller) with:
 
 ```{r, eval = FALSE}
-install.packages("devtools")
-devtools::install_github("joshuandwilliams/CDALabeller")
+install.packages("pak")
+pak::pak("joshuandwilliams/CDALabeller")
 ```
 
 ## Example
@@ -44,7 +44,7 @@ The vignette describes the workflow and every column of the exported CSV:
 vignette("CDALabeller", package = "CDALabeller")
 ```
 
-Install with `devtools::install_github("joshuandwilliams/CDALabeller", build_vignettes = TRUE)` to include it.
+`pak` does not build vignettes. To include it, install with `remotes::install_github("joshuandwilliams/CDALabeller", build_vignettes = TRUE)` instead.
 
 ## Features
 
@@ -55,5 +55,4 @@ Install with `devtools::install_github("joshuandwilliams/CDALabeller", build_vig
 * **Navigation:** Easily move between "Next" and "Previous" images in your uploaded set.
 * **Undo:** Remove the last-drawn box with the "Undo Last Box" button.
 * **Export:** Download all annotations for all processed images as a single, tidy CSV file. This file is compatible with [AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer).
-* **Autosave:** Annotations are saved to disk after every change, so closing the browser loses nothing.
 * **Provenance:** Each row records the annotator, when the box was drawn, the image's MD5 checksum and the CDALabeller version.
