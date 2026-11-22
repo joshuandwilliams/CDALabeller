@@ -20,7 +20,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Josh Williams \email{jowillia@nbi.ac.uk}
+\strong{Maintainer}: Joshua Williams \email{joshuandwilliams@outlook.com}
 
 }
 \keyword{internal}

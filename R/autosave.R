@@ -1,16 +1,45 @@
+#' Read an app setting.
+#'
+#' Uses, in order: the argument of that name passed to [run_app()], the
+#' `CDALabeller.<name>` option, then `default`.
+#'
+#' @param name Setting name, e.g. `"autosave_dir"`.
+#' @param default Value used when neither is set.
+#' @noRd
+app_setting <- function(name, default) {
+  value <- golem::get_golem_options(name)
+  if (is.null(value)) value <- getOption(paste0("CDALabeller.", name), default)
+  value
+}
+
 #' Directory for autosaved annotations.
 #'
-#' Uses, in order: the `autosave_dir` argument of [run_app()], the
-#' `CDALabeller.autosave_dir` option, then `tools::R_user_dir("CDALabeller", "data")`.
-#'
-#' @return A directory path. It is created when the first autosave is written.
+#' @return A directory path, by default `tools::R_user_dir("CDALabeller", "data")`.
+#'   It is created when the first autosave is written.
 #' @noRd
 autosave_dir <- function() {
-  dir <- golem::get_golem_options("autosave_dir")
-  if (is.null(dir)) {
-    dir <- getOption("CDALabeller.autosave_dir", tools::R_user_dir("CDALabeller", "data"))
-  }
-  dir
+  app_setting("autosave_dir", tools::R_user_dir("CDALabeller", "data"))
+}
+
+#' Delete old autosave files.
+#'
+#' Removes files named like CDALabeller's autosaves
+#' (`autosave_YYYYMMDD_HHMMSS.csv`) that were last modified more than
+#' `keep_days` days ago. Other files in `dir` are never touched. Keeps the
+#' default autosave directory, under `tools::R_user_dir()`, from growing without
+#' bound, as CRAN policy requires.
+#'
+#' @param dir Autosave directory.
+#' @param keep_days Age in days beyond which autosaves are deleted. `Inf` keeps
+#'   all of them.
+#' @return The paths deleted, invisibly.
+#' @noRd
+prune_autosaves <- function(dir, keep_days) {
+  files <- list.files(dir, pattern = "^autosave_[0-9]{8}_[0-9]{6}\\.csv$", full.names = TRUE)
+  age_days <- as.numeric(difftime(Sys.time(), file.mtime(files), units = "days"))
+  old <- files[age_days > keep_days]
+  unlink(old)
+  invisible(old)
 }
 
 #' Autosave annotations after every change.

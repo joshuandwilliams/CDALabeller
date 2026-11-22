@@ -9,6 +9,10 @@ app_server(input, output, session)
 \arguments{
 \item{input, output, session}{Internal parameters for \{shiny\}.}
 }
+\value{
+No return value, called for its side effects: it sets up the app's
+  reactive observers and outputs.
+}
 \description{
 The application server-side logic.
 }

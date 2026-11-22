@@ -10,3 +10,4 @@
 ^package\.json$
 ^tests/js$
 ^tests/integration$
+^cran-comments\.md$

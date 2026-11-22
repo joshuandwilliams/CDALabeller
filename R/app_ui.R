@@ -2,6 +2,8 @@
 #'
 #' @param request Internal parameter for \{shiny\}.
 #'
+#' @return A [shiny::tagList()] holding the app's user interface.
+#'
 #' @export
 app_ui <- function(request) {
   shiny::tagList(

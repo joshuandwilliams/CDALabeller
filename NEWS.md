@@ -24,6 +24,8 @@
 
 * Lesion score key (0 to 6) below the image, scaled to the image width.
 * Annotations are autosaved after every change; see `run_app(autosave_dir =)`.
+  Autosaves older than 30 days are deleted when the app starts; see
+  `run_app(autosave_keep_days =)`.
 * Annotator field, and per-box provenance columns (see above).
 * Uploads with duplicate file names are rejected.
 * Scores outside 0 to 6 are flagged in the app.

@@ -2,6 +2,9 @@
 #'
 #' @param input,output,session Internal parameters for \{shiny\}.
 #'
+#' @return No return value, called for its side effects: it sets up the app's
+#'   reactive observers and outputs.
+#'
 #' @export
 app_server <- function(input, output, session) {
   session$onSessionEnded(shiny::stopApp)
@@ -31,6 +34,7 @@ app_server <- function(input, output, session) {
   annotator <- shiny::reactive(input$annotator_input)
   output$download_data <- setup_download_handler(all_boxes, image_files, annotator)
 
+  prune_autosaves(autosave_dir(), app_setting("autosave_keep_days", 30))
   autosave_path <- file.path(autosave_dir(), paste0("autosave_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv"))
   setup_autosave(autosave_path, all_boxes, image_files, annotator)
   output$autosave_path <- shiny::renderText(autosave_path)
