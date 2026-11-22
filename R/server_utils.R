@@ -1,370 +1,258 @@
-#' Handle new image uploads and reset application state.
+#' Handle image upload.
 #'
-#' Sets up an observer for the file input. When new images are uploaded, it
-#' sends a message to clear the client-side state (e.g., existing canvases)
-#' and resets the server-side reactive values for the file list, current image
-#' index, and stored annotations.
+#' Stores the uploaded files, with each file's MD5 checksum for provenance, and
+#' swaps the upload step for the annotation UI. The upload step is hidden
+#' afterwards, so images are uploaded once per session. Files with duplicate
+#' names are rejected, because annotations are keyed by file name.
 #'
 #' @param input The Shiny input object from the server function.
-#' @param session The Shiny session object from the server function.
 #' @param image_files A `reactiveVal` to store the uploaded image file data.
-#' @param current_index A `reactiveVal` to store the index of the currently
-#'   viewed image.
-#' @param all_boxes A `reactiveVal` to store all bounding box annotations.
 #'
-#' @importFrom shiny observeEvent req
-#' @importFrom shinyjs disable
 #' @noRd
-handle_image_upload <- function(input, session, image_files, current_index, all_boxes) {
-  observeEvent(input$image_upload, {
-    req(input$image_upload)
-
-    # Hide Step 1
-    shinyjs::hide(selector = ".step1-container")
-
-    shinyjs::show(selector = "#step2-title")
-    shinyjs::show(selector = "#image-container")
-
-    if (nrow(input$image_upload) > 1) {
-      shinyjs::show(selector = ".image-nav")
+handle_image_upload <- function(input, image_files) {
+  shiny::observeEvent(input$image_upload, {
+    files <- input$image_upload
+    duplicated_names <- unique(files$name[duplicated(files$name)])
+    if (length(duplicated_names) > 0) {
+      shiny::showNotification(
+        paste0(
+          "These file names appear more than once: ", paste(duplicated_names, collapse = ", "),
+          ". Rename them and upload again."
+        ),
+        type = "error", duration = NULL
+      )
+      return()
     }
 
+    shinyjs::hide(selector = ".step1-container")
+    shinyjs::show(selector = "#step2-title")
+    shinyjs::show(selector = "#image-container")
     shinyjs::show(selector = ".control-panel")
-
-    # Disable file input after
-    shinyjs::disable("image_upload")
-    session$sendCustomMessage("clear_client_state", list())
-
-    image_files(input$image_upload)
-    current_index(1)
-    all_boxes(list())
+    if (nrow(files) > 1) {
+      shinyjs::show(selector = ".image-nav")
+    }
+    files$md5 <- unname(tools::md5sum(files$datapath))
+    image_files(files)
   })
 }
 
 #' Process and resize an image for app display
 #'
-#' Reads an image from a path, resizes it to fit within max dimensions
-#' while preserving aspect ratio, converts it to JPEG, and saves it to a
-#' temporary file.
+#' Reads an image, scales it to fit within max dimensions while preserving
+#' aspect ratio, and writes it to a temporary JPEG.
 #'
 #' @param filepath The path to the source image file.
-#' @param max_width The maximum width of the output image in pixels.
-#' @param max_height The maximum height of the output image in pixels.
+#' @param max_width,max_height The maximum output dimensions in pixels.
 #'
 #' @return A list containing the path to the processed JPEG (`path`), and the
 #'   original image's dimensions (`original_width`, `original_height`).
 #'
-#' @importFrom magick image_convert image_info image_read image_scale image_write
 #' @noRd
 process_image <- function(filepath, max_width = 1200, max_height = 1200) {
-  img <- image_read(filepath)
-  info <- image_info(img)
-  img <- image_scale(img, paste0(max_width, "x", max_height, ">")) # Resize while preserving aspect ratio
-  img <- image_convert(img, format = "jpeg") # Convert to JPEG
+  img <- magick::image_read(filepath)
+  info <- magick::image_info(img)
+  img <- magick::image_scale(img, paste0(max_width, "x", max_height, ">"))
   out_path <- tempfile(fileext = ".jpg")
-  image_write(img, path = out_path, format = "jpeg", quality = 85) # Save to temp file
-  return(list(path = out_path, original_width = info$width, original_height = info$height))
+  magick::image_write(img, path = out_path, format = "jpeg", quality = 85)
+  list(path = out_path, original_width = info$width, original_height = info$height)
 }
 
 #' Handle image navigation events.
 #'
-#' Sets up observers for the 'next' and 'previous' image buttons to update the
-#' current image index, ensuring the index stays within the bounds of the
+#' Moves the current index on 'next' and 'previous', keeping it within the
 #' number of uploaded images.
 #'
 #' @param input The Shiny input object from the server function.
 #' @param image_files A `reactiveVal` holding the uploaded image file data.
 #' @param current_index A `reactiveVal` for the index of the current image.
 #'
-#' @importFrom shiny observeEvent req
 #' @noRd
 handle_image_navigation <- function(input, image_files, current_index) {
-  # Next image button
-  observeEvent(input$next_image, {
-    req(image_files())
-    idx <- current_index()
-    # Use nrow() to get the correct number of uploaded files
-    if (idx < nrow(image_files())) {
-      current_index(idx + 1)
-    }
+  shiny::observeEvent(input$next_image, {
+    shiny::req(image_files())
+    if (current_index() < nrow(image_files())) current_index(current_index() + 1)
   })
-
-  # Previous image button
-  observeEvent(input$prev_image, {
-    req(image_files())
-    idx <- current_index()
-    if (idx > 1) {
-      current_index(idx - 1)
-    }
+  shiny::observeEvent(input$prev_image, {
+    if (current_index() > 1) current_index(current_index() - 1)
   })
 }
 
-#' Handle conditional visibility of navigation buttons.
+#' Handle visibility of navigation buttons.
 #'
-#' Sets up an observer that shows/hides the 'Next' and 'Previous' buttons
-#' based on the current image index.
+#' Hides 'Previous' on the first image and 'Next' on the last. The class uses
+#' `visibility: hidden`, so the buttons keep their space and the counter stays
+#' centred.
 #'
 #' @param image_files A `reactiveVal` holding the uploaded image file data.
 #' @param current_index A `reactiveVal` for the index of the current image.
 #'
-#' @importFrom shiny observe req
-#' @importFrom shinyjs toggle
 #' @noRd
-#' @importFrom shinyjs toggleClass
 handle_nav_button_visibility <- function(image_files, current_index) {
-  observe({
-    files <- image_files()
+  shiny::observe({
+    shiny::req(image_files())
     idx <- current_index()
-    req(files) # Ensure files are loaded
-
-    total_files <- nrow(files)
-
-    # Conditionally toggle a class that uses "visibility: hidden".
-    # This keeps the button in the layout, so the text stays centered.
-    # The condition is TRUE when the button should be *hidden*.
-    shinyjs::toggleClass(
-      id = "prev_image",
-      class = "hidden-by-visibility",
-      condition = (idx <= 1)
-    )
-    shinyjs::toggleClass(
-      id = "next_image",
-      class = "hidden-by-visibility",
-      condition = (idx >= total_files)
-    )
-  })
-}
-#' Handle the undo bounding box event.
-#'
-#' Sets up an observer for the 'undo' button. When clicked, it sends a
-#' custom message to the client-side JavaScript to remove the last drawn
-#' bounding box for the current image.
-#'
-#' @param input The Shiny input object from the server function.
-#' @param session The Shiny session object from the server function.
-#' @param image_files A `reactiveVal` holding the uploaded image file data.
-#' @param current_index A `reactiveVal` for the index of the current image.
-#'
-#' @importFrom shiny observeEvent
-#' @noRd
-handle_undo <- function(input, session, image_files, current_index) {
-  observeEvent(input$undo_box, {
-    # Assuming image_files() is a data frame like object from fileInput
-    current_file_path <- image_files()$datapath[current_index()]
-    session$sendCustomMessage("undo_last_box", list(filename = base::basename(current_file_path)))
+    shinyjs::toggleClass("prev_image", "hidden-by-visibility", condition = idx <= 1)
+    shinyjs::toggleClass("next_image", "hidden-by-visibility", condition = idx >= nrow(image_files()))
   })
 }
 
 #' Update annotations from client-side data.
 #'
-#' Sets up an observer that listens for incoming bounding box data from the
-#' client (`input$bbox_coords`). When data is received, it updates the main
-#' `all_boxes` reactive list with the new annotations for the corresponding
-#' filename.
+#' Stores the boxes sent by the client (`input$bbox_coords`) under their
+#' image filename in `all_boxes`. Warns if a score is not valid; such scores
+#' are exported as `NA` (see [parse_score()]).
 #'
 #' @param input The Shiny input object from the server function.
 #' @param all_boxes A `reactiveVal` to store all bounding box annotations.
 #'
-#' @importFrom shiny observeEvent
 #' @noRd
 update_annotations <- function(input, all_boxes) {
-  observeEvent(input$bbox_coords, {
-    if (!is.null(input$bbox_coords)) {
-      filename <- input$bbox_coords$filename
-      boxes <- input$bbox_coords$boxes
-      current_boxes <- all_boxes()
-      current_boxes[[filename]] <- boxes
-      all_boxes(current_boxes)
+  shiny::observeEvent(input$bbox_coords, {
+    new_boxes <- input$bbox_coords$boxes
+    scores <- vapply(new_boxes, function(b) if (is.null(b$score)) "" else as.character(b$score), character(1))
+    if (any(scores != "" & is.na(vapply(scores, parse_score, numeric(1))))) {
+      shiny::showNotification(
+        paste0("Scores must be numbers from 0 to ", max_score, ". Invalid scores are exported as NA."),
+        type = "warning", id = "invalid-score"
+      )
     }
+    boxes <- all_boxes()
+    boxes[[input$bbox_coords$filename]] <- new_boxes
+    all_boxes(boxes)
   })
 }
 
 #' Render the main output image.
 #'
-#' Creates a `renderImage` object that displays the currently selected and
-#' processed image. The function depends on reactive information about the
-#' current image.
+#' The `img` element carries the image's file name and original dimensions as
+#' `data-` attributes. The client reads them from the element it is drawing
+#' over, so the canvas scale always matches the image on screen.
 #'
-#' @param processed_image_info A reactive expression that returns a list
-#'   containing the path to the processed image.
-#' @param current_index A `reactiveVal` holding the index of the current image,
-#'   used for the alt text.
+#' @param processed_image_info A reactive expression that returns the processed
+#'   image's path and original dimensions.
+#' @param image_files A `reactiveVal` holding the uploaded image file data.
+#' @param current_index A `reactiveVal` for the index of the current image.
 #'
 #' @return A `renderImage` object.
 #'
-#' @importFrom shiny renderImage req
 #' @noRd
-render_output_image <- function(processed_image_info, current_index) {
-  renderImage({
-    req(processed_image_info())
-    list(
-      src = processed_image_info()$path,
-      contentType = "image/jpeg",
-      alt = paste("Image", current_index())
-    )
-  }, deleteFile = TRUE)
+render_output_image <- function(processed_image_info, image_files, current_index) {
+  shiny::renderImage(
+    {
+      info <- processed_image_info()
+      list(
+        src = info$path,
+        contentType = "image/jpeg",
+        alt = paste("Image", current_index()),
+        `data-filename` = image_files()$name[current_index()],
+        `data-width` = info$original_width,
+        `data-height` = info$original_height
+      )
+    },
+    deleteFile = TRUE
+  )
 }
 
-#' Render the image counter text.
-#'
-#' Creates a `renderText` object that displays the current image count and
-#' filename (e.g., "Image 3 of 5 – my_image.jpg").
+#' Render the image counter text, e.g. "Image 3 of 5 - my_image.tif".
 #'
 #' @param image_files A `reactiveVal` holding the uploaded image file data.
 #' @param current_index A `reactiveVal` for the index of the current image.
 #'
 #' @return A `renderText` object.
 #'
-#' @importFrom shiny renderText
 #' @noRd
 render_image_counter <- function(image_files, current_index) {
-  renderText({
-    files <- image_files()
+  shiny::renderText({
+    files <- shiny::req(image_files())
     idx <- current_index()
-    if (is.null(files) || nrow(files) == 0) {
-      return("No images loaded")
-    }
-    fname <- files$name[idx]
-    paste0("Image ", idx, " of ", nrow(files), " - ", fname)  # Changed to regular hyphen
+    paste0("Image ", idx, " of ", nrow(files), " - ", files$name[idx])
   })
 }
 
-#' Render dynamic UI inputs for annotation data.
-#'
-#' Creates a `renderUI` object that generates input fields (e.g., for
-#' 'treatment' or 'score') based on the fields the user selected at startup.
-#'
-#' @param data_fields A `reactiveVal` containing the user-selected field names.
-#' @param image_files A `reactiveVal` used with `req()` to ensure inputs only
-#'   appear after images are loaded.
-#'
-#' @return A `renderUI` object.
-#'
-#' @importFrom shiny renderUI req textInput tagList
+#' Highest score on the lesion score key.
 #' @noRd
-render_dynamic_inputs <- function(data_fields, image_files) {
-  renderUI({
-    fields <- data_fields()
-    req(fields, image_files())
+max_score <- 6
 
-    inputs <- list()
-    if ("treatment" %in% fields) {
-      inputs <- c(inputs, list(textInput("treatment_input", "Treatment:", placeholder = "e.g. Treatment A")))
-    }
-    if ("score" %in% fields) {
-      inputs <- c(inputs, list(textInput("score_input", "Score:", placeholder = "e.g. 0-6")))
-    }
-    tagList(inputs)
-  })
+#' Columns of the exported CSV, in order.
+#'
+#' AutoCDAScorer requires `img`, `x1`, `x2`, `y1` and `y2`
+#' (`load_cdascorer_dataframe()`) and ignores the rest.
+#' @noRd
+annotation_columns <- c(
+  "img", "x1", "y1", "x2", "y2", "treatment", "score",
+  "annotator", "created_at", "img_md5", "labeller_version"
+)
+
+#' Parse a score entered in the app.
+#'
+#' @param x A score as text, as sent by the client.
+#' @return The score as a number, or `NA` if it is empty, not a number, or
+#'   outside 0 to `max_score`.
+#' @noRd
+parse_score <- function(x) {
+  score <- suppressWarnings(as.numeric(x))
+  if (length(score) != 1 || is.na(score) || score < 0 || score > max_score) NA_real_ else score
 }
 
-#' Format a list of annotations into a data frame.
-#'
-#' Converts the nested list of bounding boxes, grouped by image name, into a
-#' single, tidy data frame suitable for export to CSV.
+#' Format annotations as the export data frame.
 #'
 #' @param boxes_list A named list where each name is an image filename and each
 #'   value is a list of bounding box annotations for that image.
+#' @param image_files The uploaded image data frame, with an `md5` column.
+#' @param annotator The annotator's name, as entered in the app.
 #'
-#' @return A data frame with all annotations, or `NULL` if the input is empty.
+#' @return A data frame with the columns in `annotation_columns`, one row per
+#'   box. It has zero rows if there are no boxes.
 #'
 #' @noRd
-format_annotations_for_download <- function(boxes_list) {
-  if (is.null(boxes_list) || length(boxes_list) == 0) {
-    return(NULL)
-  }
-
-  # Convert list of boxes to dataframe
-  all_boxes_df <- do.call(rbind, lapply(names(boxes_list), function(image_name) {
+format_annotations <- function(boxes_list, image_files, annotator) {
+  text_or_na <- function(x) if (is.null(x) || x == "") NA_character_ else x
+  rows <- lapply(names(boxes_list), function(image_name) {
     boxes <- boxes_list[[image_name]]
-    if (is.null(boxes) || length(boxes) == 0) return(NULL)
-
-    df <- data.frame(
+    if (length(boxes) == 0) {
+      return(NULL)
+    }
+    data.frame(
       img = image_name,
-      x1 = sapply(boxes, function(b) b$x1),
-      y1 = sapply(boxes, function(b) b$y1),
-      x2 = sapply(boxes, function(b) b$x2),
-      y2 = sapply(boxes, function(b) b$y2),
-      stringsAsFactors = FALSE
+      x1 = vapply(boxes, function(b) as.integer(b$x1), integer(1)),
+      y1 = vapply(boxes, function(b) as.integer(b$y1), integer(1)),
+      x2 = vapply(boxes, function(b) as.integer(b$x2), integer(1)),
+      y2 = vapply(boxes, function(b) as.integer(b$y2), integer(1)),
+      treatment = vapply(boxes, function(b) text_or_na(b$treatment), character(1)),
+      score = vapply(boxes, function(b) parse_score(b$score), numeric(1)),
+      created_at = vapply(boxes, function(b) text_or_na(b$created_at), character(1)),
+      img_md5 = image_files$md5[match(image_name, image_files$name)]
     )
-
-    # Always add treatment and score columns, replacing null or "" with NA
-    df$treatment <- sapply(boxes, function(b) ifelse(is.null(b$treatment) || b$treatment == "", NA, b$treatment))
-    df$score <- sapply(boxes, function(b) ifelse(is.null(b$score) || b$score == "", NA, b$score))
-
-    df
-  }))
-
-  if (is.null(all_boxes_df) || nrow(all_boxes_df) == 0) {
-    return(NULL)
+  })
+  df <- do.call(rbind, rows)
+  if (is.null(df)) {
+    empty <- data.frame(matrix(nrow = 0, ncol = length(annotation_columns)))
+    names(empty) <- annotation_columns
+    return(empty)
   }
-  all_boxes_df
+  df$annotator <- text_or_na(annotator)
+  df$labeller_version <- as.character(utils::packageVersion("CDALabeller"))
+  df[, annotation_columns]
 }
 
 #' Set up the download handler for annotations.
 #'
-#' Creates the `downloadHandler` object for the download button. It generates
-#' a timestamped filename and uses the `format_annotations_for_download`
-#' function to prepare the data before writing it to a CSV file.
-#'
 #' @param all_boxes A `reactiveVal` containing the list of all annotations.
+#' @param image_files A `reactiveVal` holding the uploaded image file data.
+#' @param annotator A reactive returning the annotator's name.
 #'
-#' @return A `downloadHandler` object.
+#' @return A `downloadHandler` object writing a timestamped CSV. With no boxes,
+#'   the CSV has only the header row.
 #'
-#' @importFrom shiny downloadHandler
-#' @importFrom utils write.csv
 #' @noRd
-setup_download_handler <- function(all_boxes) {
-  downloadHandler(
+setup_download_handler <- function(all_boxes, image_files, annotator) {
+  shiny::downloadHandler(
     filename = function() {
-      # Check if running under testthat/shinytest2
-      if (identical(Sys.getenv("TESTTHAT"), "true")) {
-        return("bounding_boxes_for_test.csv")
-      } else {
-        timestamp <- base::format(base::Sys.time(), "%Y%m%d_%H%M%S")
-        base::paste0("bounding_boxes_", timestamp, ".csv")
-      }
+      paste0("bounding_boxes_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
     },
     content = function(file) {
-      # Use the pure function to get the data frame
-      annotations_df <- format_annotations_for_download(all_boxes())
-
-      if (!is.null(annotations_df)) {
-        utils::write.csv(annotations_df, file, row.names = FALSE)
-      }
+      df <- format_annotations(all_boxes(), image_files(), annotator())
+      utils::write.csv(df, file, row.names = FALSE)
     }
   )
-}
-
-#' Notify client about a new processed image.
-#'
-#' Sets up an observer that triggers whenever the `processed_image_info`
-#' reactive changes. It sends a custom message to the client-side with the
-#' new image's original filename and dimensions, allowing JavaScript to
-#' correctly scale the annotation canvas.
-#'
-#' @param session The Shiny session object from the server function.
-#' @param processed_image_info A reactive expression that returns metadata for
-#'   the currently processed image.
-#' @param image_files A `reactiveVal` holding the uploaded image file data, used
-#'   to get the original filename.
-#' @param current_index A `reactiveVal` for the index of the current image.
-#'
-#' @importFrom shiny observeEvent req
-#' @noRd
-notify_client_of_new_image <- function(session, processed_image_info, image_files, current_index) {
-  observeEvent(processed_image_info(), {
-    files <- image_files()
-    idx <- current_index()
-    p_info <- processed_image_info()
-    req(p_info, files, idx) # Ensure all reactives are ready
-
-    original_filename <- files$name[idx]
-
-    session$sendCustomMessage("image_loaded", list(
-      filename = original_filename,
-      width = p_info$original_width,
-      height = p_info$original_height
-    ))
-  })
 }

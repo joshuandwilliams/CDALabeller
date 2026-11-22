@@ -1,0 +1,8 @@
+bibentry(
+  bibtype = "Manual",
+  title = "{CDALabeller}: Label Cell Death Areas in Agroinfiltration Images",
+  author = person("Josh", "Williams"),
+  year = "2026",
+  note = paste("R package version", meta$Version),
+  url = "https://github.com/joshuandwilliams/CDALabeller"
+)

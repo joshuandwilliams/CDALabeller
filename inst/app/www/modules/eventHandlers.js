@@ -1,16 +1,17 @@
 import appState from './state.js';
-import { redraw, makeSquare, ensureCanvasSize } from './canvasUtils.js';
+import { redraw, ensureCanvasSize, syncInputsToLastBox } from './canvasUtils.js';
+import { canvasToImageBox, makeSquare, isBoxTooLarge, isEmptyBox, sanitizeScore, isValidScore } from './annotationUtils.js';
 import { sendAnnotationsToShiny } from './shinyHandlers.js';
 
 /**
- * Sets up all DOM event listeners for the application, including canvas drawing,
- * button clicks, and dynamic input handling.
+ * Sets up all DOM event listeners for the application: canvas drawing, undo,
+ * window resizing, and the treatment/score inputs.
  */
 export function setupEventListeners() {
   // Live drawing of the new box
   function draw(e) {
     if (!appState.isDrawing) return;
-    redraw(); // Redraw existing boxes first
+    redraw();
     const currentX = Math.max(0, Math.min(e.offsetX, appState.canvas.width));
     const currentY = Math.max(0, Math.min(e.offsetY, appState.canvas.height));
     appState.ctx.strokeStyle = "blue";
@@ -18,60 +19,43 @@ export function setupEventListeners() {
     appState.ctx.strokeRect(appState.startX, appState.startY, currentX - appState.startX, currentY - appState.startY);
   }
 
-  // Finalize a box on mouse up
+  // Finalize a box on mouse up, in original-image pixels
   function handleMouseUp(e) {
     if (!appState.isReady || !appState.isDrawing) return;
     appState.isDrawing = false;
-    const endX = e.offsetX;
-    const endY = e.offsetY;
+    const imgWidth = appState.originalImageWidth;
+    const imgHeight = appState.originalImageHeight;
+    const newBox = canvasToImageBox(
+      { x: appState.startX, y: appState.startY },
+      { x: e.offsetX, y: e.offsetY },
+      { width: appState.canvas.width, height: appState.canvas.height },
+      { width: imgWidth, height: imgHeight }
+    );
 
-    let newBox = {
-      x1: Math.round((Math.min(appState.startX, endX) / appState.canvas.width) * appState.originalImageWidth),
-      y1: Math.round((Math.min(appState.startY, endY) / appState.canvas.height) * appState.originalImageHeight),
-      x2: Math.round((Math.max(appState.startX, endX) / appState.canvas.width) * appState.originalImageWidth),
-      y2: Math.round((Math.max(appState.startY, endY) / appState.canvas.height) * appState.originalImageHeight),
-    };
-
-    const boxWidth = newBox.x2 - newBox.x1;
-    const boxHeight = newBox.y2 - newBox.y1;
-    const shortestSide = Math.min(appState.originalImageWidth, appState.originalImageHeight);
-
-    if (boxWidth > shortestSide || boxHeight > shortestSide) {
-      alert(`The box you drew is too large. The maximum size for any side is ${Math.round(shortestSide)} pixels (the shortest side of this image).`);
-      redraw(); // Redraw to clear the in-progress box
+    if (isEmptyBox(newBox)) {
+      redraw();
+      return;
+    }
+    if (isBoxTooLarge(newBox, imgWidth, imgHeight)) {
+      alert(`The box you drew is too large. The maximum size for any side is ${Math.min(imgWidth, imgHeight)} pixels (the shortest side of this image).`);
+      redraw();
       return;
     }
 
-    appState.requiredFields.forEach(field => { newBox[field] = null; });
-    const squaredBox = makeSquare(newBox, appState.originalImageWidth, appState.originalImageHeight);
-
-    if (!appState.drawnBoxesPerImage[appState.currentImage]) {
-      appState.drawnBoxesPerImage[appState.currentImage] = [];
-    }
-    appState.drawnBoxesPerImage[appState.currentImage].push(squaredBox);
+    const boxes = appState.drawnBoxesPerImage[appState.currentImage] ??= [];
+    boxes.push({ ...makeSquare(newBox, imgWidth, imgHeight), created_at: new Date().toISOString() });
     redraw();
-
-    appState.requiredFields.forEach((field, index) => {
-      const inputEl = document.getElementById(field + '_input');
-      if (inputEl) {
-        inputEl.disabled = false;
-        inputEl.value = "";
-        if (index === 0) { inputEl.focus(); }
-      }
-    });
+    syncInputsToLastBox();
+    document.getElementById(appState.requiredFields[0] + '_input').focus();
     sendAnnotationsToShiny();
   }
 
-  // Validation and start drawing on mouse down
-    appState.canvas.addEventListener('mousedown', (e) => {
-      if (!appState.isReady) return;
-      // Removed validation block: drawing is always allowed.
-      appState.isDrawing = true;
-      appState.startX = e.offsetX;
-      appState.startY = e.offsetY;
-    });
-
-  // Attach other canvas listeners
+  appState.canvas.addEventListener('mousedown', (e) => {
+    if (!appState.isReady) return;
+    appState.isDrawing = true;
+    appState.startX = e.offsetX;
+    appState.startY = e.offsetY;
+  });
   appState.canvas.addEventListener('mousemove', draw);
   appState.canvas.addEventListener('mouseup', handleMouseUp);
   appState.canvas.addEventListener('mouseleave', () => {
@@ -81,33 +65,23 @@ export function setupEventListeners() {
     }
   });
 
-  // Handle window resizing
   window.addEventListener('resize', () => { setTimeout(ensureCanvasSize, 100); });
 
-  // Handle undo button
-  function undoLastBox() {
+  document.getElementById("undoButton").addEventListener("click", () => {
     const boxes = appState.drawnBoxesPerImage[appState.currentImage];
-    if (boxes && boxes.length > 0) {
-      boxes.pop();
-      const newLastBox = boxes.length > 0 ? boxes.slice(-1)[0] : null;
-      appState.requiredFields.forEach(field => {
-        const inputEl = document.getElementById(field + '_input');
-        if (inputEl) {
-          inputEl.value = newLastBox ? (newLastBox[field] || "") : "";
-          inputEl.disabled = false; // Always keep inputs enabled
-        }
-      });
-      redraw();
-      sendAnnotationsToShiny();
-    }
-  }
-  document.getElementById("undoButton").addEventListener("click", undoLastBox);
+    if (!boxes || boxes.length === 0) return;
+    boxes.pop();
+    syncInputsToLastBox();
+    redraw();
+    sendAnnotationsToShiny();
+  });
 
-  // Handle dynamic text inputs
+  // Copy input values onto the last box. Scores outside 0-6 are flagged as errors
+  // here and exported as NA by the server (parse_score in R/server_utils.R).
   function updateLastBoxField(field, value) {
     const boxes = appState.drawnBoxesPerImage[appState.currentImage];
     if (boxes && boxes.length > 0) {
-      boxes.slice(-1)[0][field] = value;
+      boxes[boxes.length - 1][field] = value;
       sendAnnotationsToShiny();
     }
   }
@@ -115,9 +89,9 @@ export function setupEventListeners() {
     if (e.target.id === 'treatment_input') {
       updateLastBoxField('treatment', e.target.value);
     } else if (e.target.id === 'score_input') {
-      const sanitizedValue = e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
-      e.target.value = sanitizedValue;
-      updateLastBoxField('score', sanitizedValue);
+      e.target.value = sanitizeScore(e.target.value);
+      e.target.closest('.form-group').classList.toggle('has-error', !isValidScore(e.target.value));
+      updateLastBoxField('score', e.target.value);
     }
   });
 }

@@ -2,75 +2,69 @@
 #'
 #' @param request Internal parameter for \{shiny\}.
 #'
-#' @importFrom shiny tagList fluidPage h2 tags imageOutput fluidRow column actionButton textOutput span fileInput uiOutput downloadButton
-#' @importFrom shinyFiles shinyDirButton
-#' @importFrom shinyjs useShinyjs
 #' @export
 app_ui <- function(request) {
-  tagList(
+  shiny::tagList(
     golem_add_external_resources(),
     shinyjs::useShinyjs(),
-    fluidPage(
-      # Page Header
-      tags$div(
+    shiny::fluidPage(
+      shiny::tags$div(
         class = "title-container",
-        h2("CDALabeller"),
-        tags$p("Draw bounding box annotations around cell death areas")
+        shiny::h2("CDALabeller"),
+        shiny::tags$p("Draw bounding box annotations around cell death areas")
       ),
-
-      # Main two-column layout
-      fluidRow(
+      shiny::fluidRow(
         class = "main-container",
 
-        # Left Column: Image and Navigation
-        column(
+        # Left column: upload, image and navigation
+        shiny::column(
           width = 9,
-          tags$div(
+          shiny::tags$div(
             class = "step1-container",
-            tags$h4("Upload Your Agroinfiltration Images"),
-            fileInput(
+            shiny::tags$h4("Upload Your Agroinfiltration Images"),
+            shiny::fileInput(
               "image_upload",
-              label = NULL, # Label is provided by the h4
+              label = NULL,
               multiple = TRUE,
               accept = c(".tif", ".tiff"),
-              buttonLabel = "Browse...",
               placeholder = "No files selected"
             )
           ),
-
-          tags$h4(id = "step2-title", "Step 1: Draw a Bounding Box (Click and Drag)"),
-          tags$div(
+          shiny::tags$h4(id = "step2-title", "Step 1: Draw a Bounding Box (Click and Drag)"),
+          shiny::tags$div(
             id = "image-container",
-            imageOutput("output_image", height = "auto"),
-            tags$canvas(id = "myCanvas")
+            shiny::imageOutput("output_image", height = "auto"),
+            shiny::tags$canvas(id = "myCanvas"),
+            shiny::tags$img(id = "score-key", src = "www/lesion_score_key.jpg", alt = "Lesion score key, 0 to 6")
           ),
-          tags$div(
+          shiny::tags$div(
             class = "image-nav",
-            actionButton("prev_image", "Previous"),
-            textOutput("image_counter", container = span),
-            actionButton("next_image", "Next")
+            shiny::actionButton("prev_image", "Previous"),
+            shiny::textOutput("image_counter", container = shiny::span),
+            shiny::actionButton("next_image", "Next")
           )
         ),
 
-        # Right Column: Controls and Data Entry
-        column(
+        # Right column: annotation fields and export
+        shiny::column(
           width = 3,
           class = "control-panel",
-          tags$h4("Step 2: Record Treatment / Score"),
-          uiOutput("dynamic_inputs"),
-          tags$hr(),
-
-          actionButton("undoButton", "Undo Last Box"),
-          tags$hr(),
-
-          tags$div(
+          shiny::tags$h4("Step 2: Record Treatment / Score"),
+          shiny::textInput("annotator_input", "Annotator:", placeholder = "Your name or initials"),
+          shiny::textInput("treatment_input", "Treatment:", placeholder = "e.g. Treatment A"),
+          shiny::textInput("score_input", "Score:", placeholder = "e.g. 0-6"),
+          shiny::tags$hr(),
+          shiny::actionButton("undoButton", "Undo Last Box"),
+          shiny::tags$hr(),
+          shiny::tags$div(
             id = "download-box",
-            tags$h4("Download your Annotations"),
-            # Updated button label
-            downloadButton("download_data", "Download Your Boxes")
+            shiny::downloadButton("download_data", "Download Your Boxes")
           ),
-
-          tags$hr()
+          shiny::tags$p(
+            class = "autosave-note",
+            "Autosaved after every change to ",
+            shiny::textOutput("autosave_path", inline = TRUE)
+          )
         )
       )
     )
@@ -79,18 +73,13 @@ app_ui <- function(request) {
 
 #' Add external Resources to the Application
 #'
-#' This function is internally used to add external
-#' resources inside the Shiny application.
-#'
-#' @importFrom golem add_resource_path favicon bundle_resources
-#' @importFrom shiny tags
 #' @noRd
 golem_add_external_resources <- function() {
-  add_resource_path("www", app_sys("app/www"))
-  tags$head(
-    favicon(),
-    tags$title("CDALabeller"),  # This sets the tab name
-    tags$link(rel = "stylesheet", type = "text/css", href = "www/styles.css"),
-    tags$script(type = "module", src = "www/script.js")
+  golem::add_resource_path("www", app_sys("app/www"))
+  shiny::tags$head(
+    golem::favicon(),
+    shiny::tags$title("CDALabeller"),
+    shiny::tags$link(rel = "stylesheet", type = "text/css", href = "www/styles.css"),
+    shiny::tags$script(type = "module", src = "www/script.js")
   )
 }

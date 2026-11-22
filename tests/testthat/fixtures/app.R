@@ -1,1 +1,0 @@
-CDALabeller::run_app()

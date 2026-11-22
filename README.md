@@ -5,9 +5,8 @@
 
 [![R CMD
 check](https://github.com/joshuandwilliams/CDALabeller/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/CDALabeller/actions/workflows/R-CMD-check.yaml)
-[![codecov](https://codecov.io/gh/%5BYOUR_USERNAME%5D/%5BYOUR_REPO%5D/graph/badge.svg)](https://codecov.io/gh/%5BYOUR_USERNAME%5D/%5BYOUR_REPO%5D)
 [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-![R](https://img.shields.io/badge/R-%3E=3.5.0-1e90ff?logo=r)
+![R](https://img.shields.io/badge/R-%3E=4.0.0-1e90ff?logo=r)
 ![Shiny](https://img.shields.io/badge/built%20with-Shiny-00B2E1?logo=shiny)
 
 <!-- badges: end -->
@@ -37,6 +36,17 @@ CDALabeller::run_app()
 
 This will launch the Shiny application in your web browser.
 
+The vignette describes the workflow and every column of the exported
+CSV:
+
+``` r
+vignette("CDALabeller", package = "CDALabeller")
+```
+
+Install with
+`devtools::install_github("joshuandwilliams/CDALabeller", build_vignettes = TRUE)`
+to include it.
+
 ## Features
 
 - **Image Upload:** Upload one or more TIF/TIFF images for annotation.
@@ -44,9 +54,15 @@ This will launch the Shiny application in your web browser.
   automatically converted to squares to ensure uniform area selection.
 - **Annotation:** Add “Treatment” and “Score” metadata to each box you
   draw.
+- **Score key:** A 0–6 lesion score key, scaled to the image width, sits
+  below each image.
 - **Navigation:** Easily move between “Next” and “Previous” images in
   your uploaded set.
 - **Undo:** Remove the last-drawn box with the “Undo Last Box” button.
 - **Export:** Download all annotations for all processed images as a
-  single, tidy CSV file. This file can is compatible with
-  [AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer)
+  single, tidy CSV file. This file is compatible with
+  [AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer).
+- **Autosave:** Annotations are saved to disk after every change, so
+  closing the browser loses nothing.
+- **Provenance:** Each row records the annotator, when the box was
+  drawn, the image’s MD5 checksum and the CDALabeller version.

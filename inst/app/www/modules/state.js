@@ -15,7 +15,7 @@ const appState = {
   originalImageWidth: 0,
   originalImageHeight: 0,
 
-  // Configuration from R/Shiny
+  // Annotation fields, matching the treatment_input and score_input ids
   requiredFields: ["treatment", "score"],
 
   // Drawing state
