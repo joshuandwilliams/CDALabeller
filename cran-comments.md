@@ -22,4 +22,6 @@ Local, macOS 26.6.1, R 4.4.2, `R CMD check --as-cran`: 0 errors, 0 warnings,
 * win-builder, R-devel and R-release: uploaded 2026-11-22, results pending
   (emailed to the maintainer).
 * macOS builder: not run. The service returned HTTP 502 on 2026-11-22.
-* R-hub: not run yet. Its workflow starts only from the default branch.
+* R-hub, R-devel on linux, windows, macos and macos-arm64 (run
+  2026-11-22): Status OK on all four (0 errors, 0 warnings, 0 notes). 46 test
+  expectations passed; the end-to-end tests were skipped, as on CRAN.
