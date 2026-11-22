@@ -6,14 +6,19 @@ skip_if(is.null(tryCatch(chromote::find_chrome(), error = function(e) NULL)), "C
 
 # Starts the app with one blank 2400 x 1600 image. The window is wide enough for
 # the image to display at 1200 x 800, so one canvas pixel is two image pixels.
+# The image file is 7.7 MB, over Shiny's default 5 MB upload limit, so every
+# test also checks that run_app() raises that limit.
 start_app <- function(env = parent.frame()) {
   path <- withr::local_tempfile(fileext = ".tif", .local_envir = env)
   magick::image_write(magick::image_blank(2400, 1600, "grey"), path, format = "tiff")
-  # run_app(autosave_dir =) does not reach AppDriver's child process, so the
-  # autosave directory is set through an R option there instead.
+  # Start from an app.R that calls run_app(), as a deployed app does. Given an
+  # app object, AppDriver rebuilds it from the UI and server function alone,
+  # which drops run_app()'s onStart and its settings.
+  app_dir <- withr::local_tempdir(.local_envir = env)
+  writeLines("CDALabeller::run_app()", file.path(app_dir, "app.R"))
   autosave <- withr::local_tempdir(.local_envir = env)
   app <- shinytest2::AppDriver$new(
-    run_app(),
+    app_dir,
     width = 1800, height = 1400, load_timeout = 30000,
     options = list(CDALabeller.autosave_dir = autosave)
   )
