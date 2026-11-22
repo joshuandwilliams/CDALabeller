@@ -95,9 +95,10 @@ write.csv(boxes, "boxes_with_paths.csv", row.names = FALSE)
 crops <- AutoCDAScorer::crop_and_load_images("boxes_with_paths.csv")
 ```
 
-## Note on earlier versions
+## Note on older exports
 
-Before version 0.1.0, boxes were recorded one display pixel up and to the
-left of where they were drawn. In image pixels, that is the image width
-divided by its displayed width: about 4.6 pixels for a 5568 pixel wide image
-shown 1200 pixels wide. Version 0.1.0 also added the columns after `score`.
+A CSV without a `labeller_version` column was written before pull request #1
+(merged November 2026), which added that column and fixed an offset. In such
+files, boxes were recorded one display pixel up and to the left of where they
+were drawn. In image pixels, that is the image width divided by its displayed
+width: about 4.6 pixels for a 5568 pixel wide image shown 1200 pixels wide.
