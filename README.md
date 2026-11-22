@@ -13,56 +13,65 @@ coverage](https://codecov.io/gh/joshuandwilliams/CDALabeller/graph/badge.svg)](h
 
 <!-- badges: end -->
 
-The goal of `CDALabeller` is to provide a simple, interactive tool for
-drawing bounding boxes and annotating cell death areas (CDAs) in
-agroinfiltration images.
+CDALabeller is an app for labelling cell death areas (CDAs) in
+photographs of agroinfiltrated leaves. You draw a square around each
+area and note its treatment. You also give it a score from 0 (no cell
+death) to 6 (strong cell death). The app then saves your squares as a
+CSV file. That file can be read by
+[AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer),
+which scores cell death areas automatically.
 
 ## Installation
 
-You can install the development version of `CDALabeller` from
-[GitHub](https://github.com/joshuandwilliams/CDALabeller) with:
+CDALabeller needs R 4.0.0 or later. Install it from GitHub with `pak`:
 
 ``` r
 install.packages("pak")
 pak::pak("joshuandwilliams/CDALabeller")
 ```
 
-## Example
-
-To run the application:
+`pak` does not build the package’s guide (its vignette). To include the
+guide, install with `remotes` instead:
 
 ``` r
-library(CDALabeller)
+install.packages("remotes")
+remotes::install_github("joshuandwilliams/CDALabeller", build_vignettes = TRUE)
+```
+
+## Running the app
+
+``` r
 CDALabeller::run_app()
 ```
 
-This will launch the Shiny application in your web browser.
+The app opens in your web browser. In Positron, it opens in the Viewer
+pane instead. Closing the app’s tab stops the app, and any boxes you
+have not downloaded are lost.
 
-The vignette describes the workflow and every column of the exported
-CSV:
+## What the app does
+
+- **Upload.** Upload one or more TIFF images. Each file can be up to 200
+  MB.
+- **Draw.** Click and drag to draw a box around a cell death area. Each
+  box is made square, so every area is cropped to the same shape.
+- **Record.** Enter a treatment and a score for each box. A score key
+  below the image shows example areas for each score.
+- **Review.** Move between images with Previous and Next. Undo removes
+  the last box you drew.
+- **Download.** Save the boxes for all images as one CSV file.
+- **Trace.** Each row records who drew the box and when they drew it. It
+  also records the exact image file and the version of CDALabeller used.
+
+## Guide
+
+The guide explains each step and every column of the CSV file:
 
 ``` r
 vignette("CDALabeller", package = "CDALabeller")
 ```
 
-`pak` does not build vignettes. To include it, install with
-`remotes::install_github("joshuandwilliams/CDALabeller", build_vignettes = TRUE)`
-instead.
+## Citing CDALabeller
 
-## Features
-
-- **Image Upload:** Upload one or more TIF/TIFF images for annotation.
-- **Drawing:** Click and drag to draw bounding boxes. Boxes are
-  automatically converted to squares to ensure uniform area selection.
-- **Annotation:** Add “Treatment” and “Score” metadata to each box you
-  draw.
-- **Score key:** A 0–6 lesion score key, scaled to the image width, sits
-  below each image.
-- **Navigation:** Easily move between “Next” and “Previous” images in
-  your uploaded set.
-- **Undo:** Remove the last-drawn box with the “Undo Last Box” button.
-- **Export:** Download all annotations for all processed images as a
-  single, tidy CSV file. This file is compatible with
-  [AutoCDAScorer](https://github.com/joshuandwilliams/AutoCDAScorer).
-- **Provenance:** Each row records the annotator, when the box was
-  drawn, the image’s MD5 checksum and the CDALabeller version.
+``` r
+citation("CDALabeller")
+```

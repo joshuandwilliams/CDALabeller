@@ -1,11 +1,15 @@
-#' Run the Shiny Application
+#' Start the CDALabeller app
 #'
-#' @param ... arguments to pass to golem_opts.
-#' See `?golem::get_golem_options` for more details.
+#' Opens the app in your web browser, or in the Viewer pane in Positron. While
+#' the app runs, each uploaded image can be up to 200 MB. Closing the app's tab
+#' stops the app. Download your boxes before closing it.
+#'
+#' @param ... Options passed to the app through golem
+#'   (see `?golem::get_golem_options`). CDALabeller does not use any yet.
 #' @inheritParams shiny::shinyApp
 #'
-#' @return A Shiny app object. Printing it, as happens when `run_app()` is
-#'   called at the console, starts the app.
+#' @return A Shiny app object. Printing it starts the app, which is what
+#'   happens when you call `run_app()` at the console.
 #'
 #' @examples
 #' if (interactive()) {
@@ -40,8 +44,8 @@ max_upload_bytes <- 200 * 1024^2
 #' Raise Shiny's upload limit for as long as the app runs.
 #'
 #' Called as the app's `onStart`. Shiny reads `shiny.maxRequestSize` at each
-#' upload, so setting it here is enough; the previous value is restored when
-#' the app stops, so the user's options are left as they were.
+#' upload, so setting it here is enough. The previous value is restored when
+#' the app stops, which leaves the user's options as they were.
 #'
 #' @param onStart The `onStart` function passed to [run_app()], or `NULL`.
 #' @noRd

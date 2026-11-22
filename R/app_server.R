@@ -1,9 +1,12 @@
-#' The application server-side logic.
+#' The app's server logic
 #'
-#' @param input,output,session Internal parameters for \{shiny\}.
+#' Responds to what the user does in the app started by [run_app()]. You do
+#' not normally need to call this yourself.
 #'
-#' @return No return value, called for its side effects: it sets up the app's
-#'   reactive observers and outputs.
+#' @param input,output,session Used internally by Shiny.
+#'
+#' @return Nothing. It is called for its side effects, which set up the app's
+#'   responses to the user.
 #'
 #' @export
 app_server <- function(input, output, session) {

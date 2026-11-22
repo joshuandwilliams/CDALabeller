@@ -2,17 +2,18 @@
 % Please edit documentation in R/app_server.R
 \name{app_server}
 \alias{app_server}
-\title{The application server-side logic.}
+\title{The app's server logic}
 \usage{
 app_server(input, output, session)
 }
 \arguments{
-\item{input, output, session}{Internal parameters for \{shiny\}.}
+\item{input, output, session}{Used internally by Shiny.}
 }
 \value{
-No return value, called for its side effects: it sets up the app's
-  reactive observers and outputs.
+Nothing. It is called for its side effects, which set up the app's
+  responses to the user.
 }
 \description{
-The application server-side logic.
+Responds to what the user does in the app started by [run_app()]. You do
+not normally need to call this yourself.
 }

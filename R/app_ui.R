@@ -1,6 +1,9 @@
-#' The application User-Interface
+#' The app's user interface
 #'
-#' @param request Internal parameter for \{shiny\}.
+#' Builds the page that [run_app()] shows. You do not normally need to call this
+#' yourself.
+#'
+#' @param request Used internally by Shiny.
 #'
 #' @return A [shiny::tagList()] holding the app's user interface.
 #'

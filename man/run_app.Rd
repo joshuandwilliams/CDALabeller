@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_app.R
 \name{run_app}
 \alias{run_app}
-\title{Run the Shiny Application}
+\title{Start the CDALabeller app}
 \usage{
 run_app(
   onStart = NULL,
@@ -33,15 +33,17 @@ request to determine whether the \code{ui} should be used to handle the
 request. Note that the entire request path must match the regular
 expression in order for the match to be considered successful.}
 
-\item{...}{arguments to pass to golem_opts.
-See `?golem::get_golem_options` for more details.}
+\item{...}{Options passed to the app through golem
+(see `?golem::get_golem_options`). CDALabeller does not use any yet.}
 }
 \value{
-A Shiny app object. Printing it, as happens when `run_app()` is
-  called at the console, starts the app.
+A Shiny app object. Printing it starts the app, which is what
+  happens when you call `run_app()` at the console.
 }
 \description{
-Run the Shiny Application
+Opens the app in your web browser, or in the Viewer pane in Positron. While
+the app runs, each uploaded image can be up to 200 MB. Closing the app's tab
+stops the app. Download your boxes before closing it.
 }
 \examples{
 if (interactive()) {

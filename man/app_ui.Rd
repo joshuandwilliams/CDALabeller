@@ -2,16 +2,17 @@
 % Please edit documentation in R/app_ui.R
 \name{app_ui}
 \alias{app_ui}
-\title{The application User-Interface}
+\title{The app's user interface}
 \usage{
 app_ui(request)
 }
 \arguments{
-\item{request}{Internal parameter for \{shiny\}.}
+\item{request}{Used internally by Shiny.}
 }
 \value{
 A [shiny::tagList()] holding the app's user interface.
 }
 \description{
-The application User-Interface
+Builds the page that [run_app()] shows. You do not normally need to call this
+yourself.
 }
