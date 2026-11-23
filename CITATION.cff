@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "CDALabeller: Label Cell Death Areas in Agroinfiltration Images"
+abstract: "A Shiny app for drawing bounding boxes around cell death areas (CDAs) in agroinfiltration images and recording a cell death severity score from 0 to 6 for each. The annotations are exported as a CSV file that AutoCDAScorer reads."
+authors:
+  - family-names: Williams
+    given-names: Joshua
+    email: joshuandwilliams@outlook.com
+license: MIT
+repository-code: "https://github.com/joshuandwilliams/CDALabeller"
+keywords:
+  - agroinfiltration
+  - cell death
+  - Nicotiana benthamiana
+  - image annotation
+  - R
+  - Shiny
