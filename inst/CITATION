@@ -4,5 +4,6 @@ bibentry(
   author = person("Joshua", "Williams"),
   year = "2026",
   note = paste("R package version", meta$Version),
+  doi = "10.5281/zenodo.24479169",
   url = "https://github.com/joshuandwilliams/CDALabeller"
 )
