@@ -21,7 +21,7 @@ Local, macOS 26.6.1, R 4.4.2, `R CMD check --as-cran`: 0 errors, 0 warnings,
   agroinfiltration, CDA, CDAs.
   These are spelled correctly. Agroinfiltration is the method of infiltrating
   plant leaves with Agrobacterium. A CDA is a cell death area, the region of a
-  leaf that the package scores, and CDAs is its plural.
+  leaf that the app labels, and CDAs is its plural.
 
 * Found the following hidden files and directories: .git
 
