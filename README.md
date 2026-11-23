@@ -10,6 +10,7 @@ coverage](https://codecov.io/gh/joshuandwilliams/CDALabeller/graph/badge.svg)](h
 [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 ![R](https://img.shields.io/badge/R-%3E=4.0.0-1e90ff?logo=r)
 ![Shiny](https://img.shields.io/badge/built%20with-Shiny-00B2E1?logo=shiny)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24479169.svg)](https://doi.org/10.5281/zenodo.24479169)
 
 <!-- badges: end -->
 
@@ -80,3 +81,7 @@ The scoring key is adapted from Maqbool et al. (2015), *eLife* 4, e08709
 ``` r
 citation("CDALabeller")
 ```
+
+Each release is archived on Zenodo. The DOI
+[10.5281/zenodo.24479169](https://doi.org/10.5281/zenodo.24479169)
+always refers to the latest release.

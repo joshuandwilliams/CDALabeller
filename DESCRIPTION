@@ -1,6 +1,6 @@
 Package: CDALabeller
 Title: Label Cell Death Areas in Agroinfiltration Images
-Version: 0.1.0
+Version: 0.1.0.9000
 Authors@R: 
     person("Joshua", "Williams", , "joshuandwilliams@outlook.com", role = c("aut", "cre"))
 Description: A 'shiny' app for annotating cell death areas (CDAs) in
