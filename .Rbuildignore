@@ -11,3 +11,4 @@
 ^tests/js$
 ^tests/integration$
 ^cran-comments\.md$
+^CITATION\.cff$
